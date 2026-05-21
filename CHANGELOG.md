@@ -9,10 +9,15 @@ All notable changes to this project will be documented in this file.
   - 自动检测操作系统 (Linux/macOS/Windows)
   - 不存在时自动 clone
   - 存在时自动 git pull
+- **Pipeline QA Gate**: task/qa-pending → task/qa-pass 质量门禁
+- **Retry Mechanism**: 最多 3 次重试，超限自动 escalation
+- **Status Report Template**: 标准化报告格式 (Phase/Progress/Evidence/Next)
+- **Pipeline Phases**: pm → dev → qa → integration 四阶段协调
+- **Evidence-based**: QA 检查清单，回复必须包含证据
 
 ### Changed
 - **README.md**: 更新为使用 init_env.sh 的方式
-- **路径规范**: 明确各平台的路径约定
+- **scan_issues.sh v2.0**: 增加质量门禁、重试机制、状态报告、Pipeline 协调
 
 ### 路径规范
 | 框架 | Linux/macOS | Windows |
