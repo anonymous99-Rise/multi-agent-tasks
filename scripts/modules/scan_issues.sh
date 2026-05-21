@@ -155,16 +155,14 @@ URL: $ISSUE_URL
 
       ANALYSIS=$(hermes chat -q "$AGENT_PROMPT" --provider minimax-cn 2>&1)
 
-      # 过滤无效内容
-      IS_ACK=$(echo "$ANALYSIS" | grep -iE "(收到艾特|我来分析一下|稍后汇报)" | wc -l)
-      IS_PLACEHOLDER=$(echo "$ANALYSIS" | grep -iE "(\\[具体在做什么\\]|\\[证据：)" | wc -l)
-
-      if [ "$IS_ACK" -gt 0 ] || [ "$IS_PLACEHOLDER" -gt 0 ]; then
-        echo "  → Hermes: 无效 ACK/占位符，跳过"
-      elif [ -n "$ANALYSIS" ] && [ ${#ANALYSIS} -gt 50 ]; then
-        gh issue comment $I_NUM --body "$ANALYSIS" 2>&1 || echo "  → 评论失败"
-      else
+      # 验证 AI 内容质量
+      if [ -z "$ANALYSIS" ] || [ ${#ANALYSIS} -lt 20 ]; then
         echo "  → Hermes: 内容太短或为空，跳过"
+      elif echo "$ANALYSIS" | grep -qiE "(\\[.*\\]|无内容|待补充|TODO)"; then
+        echo "  → Hermes: 检测到占位符内容，跳过"
+        echo "  → AI 原始输出: ${ANALYSIS:0:200}"
+      else
+        gh issue comment $I_NUM --body "$ANALYSIS" 2>&1 || echo "  → 评论失败"
       fi
     fi
 
