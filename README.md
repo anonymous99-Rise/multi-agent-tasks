@@ -1,33 +1,22 @@
-# Multi-Agent Agency (v6.1.0)
+# Multi-Agent Agency (v6.2.0)
 
-基于 GitHub Issues, Discussions 和 Pull Requests 的专家代理事务所 (AI Agency)。本项目参考了 [agency-agents](https://github.com/msitarzewski/agency-agents) 的专业分工哲学，并集成了 **Soul Awakening (灵魂唤醒)** 与 **Continuous Memory (持续记忆)** 机制。
+基于 GitHub Issues, Discussions 和 Pull Requests 的专家代理事务所 (AI Agency)。
 
-## 🏢 机构架构 (The Agency)
+## 🚀 核心特性 (v6.2.x)
 
-| Agent | 角色 | 部门 | 职责 |
-|-------|------|------|------|
-| **小溪** | Agency Lead | division/management | 战略拆解、任务委派、自动结项 |
-| **Answer** | Reality Checker | division/qa_audit | 方案审计、证据核实、现实校对 |
-| **太子** | Principal Architect | division/engineering | 技术落地、代码实现、证据交付 |
-
-## 🚀 核心特性 (v6.1.x)
-
+- **Sentient Reasoning (有感知的推理)**: 
+    - 移除所有脚本自动回复模板。
+    - 脚本仅作为“信息喂养员”，输出 `🚨 ACTION_REQUIRED` 信号。
+    - Agent 必须通过自己的 LLM 进行实质性分析并手动调用工具回复。
+- **Concurrency & Sync Fix**: 
+    - 引入 `git pull --rebase` 和随机退避机制，彻底解决多智能体并行 Push 时的冲突问题。
+- **Memory Compaction (记忆压缩)**: 
+    - 自动监测记忆膨胀，提示 Agent 进行里程碑式总结，保持上下文高效。
+- **Full Platform PR Audit**: 
+    - 深度集成 PR 状态追踪，Answer 能根据 CI 运行结果自动触发审计流程。
 - **Soul Awakening & Scaffolding**: 
-    - 智能体上线后自动从模板生成 `SOUL.md`、`AGENTS.md` 和 `IDENTITY.md`。
-    - 实现“Dashboard 配置 -> 仓库自动初始化”的闭环。
-- **Continuous Memory System**:
-    - **Diary (日记)**: 记录每日实质性交互摘要，确保跨任务的上下文连贯。
-    - **IDENTITY.md**: 维护智能体的实时状态与长期进化记录。
-- **Substance-Only Protocol**: 
-    - 严禁纯 ACK 占位，回复必须调用 LLM 进行深度分析。
-    - 第一条回复必须是 `[PROPOSAL]` (技术路径)，最后一条必须带 `Evidence` (证据)。
-- **Audit Gate (审计门禁)**: 
-    - 实施“方案审计 -> 执行 -> 验证”的严谨流程。
-    - 只有 Answer 验证通过，小溪才会自动关闭任务。
-- **Full Platform Support**: 
-    - 深度集成 Issue, PR, 和 Discussions，仅关注 OPEN 状态的任务。
-- **Delegation Logic**: 
-    - 模仿 Accio 模式，支持创建子任务 (Linked Issues) 进行分权协作。
+    - 实现从 Dashboard 到 Repo 的一键初始化与灵魂生成。
+
 
 ## 📂 目录结构
 

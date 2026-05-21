@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Multi-Agent Inbox Processor (v6.1.0)
-# Agency v6.1: Soul Awakening + Scaffolding + Diary System
+# Multi-Agent Inbox Processor (v6.2.0)
+# Agency v6.2: Sentient Reasoning + Concurrency Fix + Memory Pruning
 
 #
 # 支持:
@@ -91,7 +91,10 @@ init_role_if_missing() {
     sed -i "s/{{AGENT_NAME}}/$AGENT_NAME/g" "$role_dir/IDENTITY.md"
     
     log "INFO" "Scaffolding complete. Committing to repository..."
+    # Concurrency Fix: Pull before push
+    sleep $((RANDOM % 10))
     git add "$role_dir"
+    git pull --rebase origin main
     git commit -m "chore: soul awakening for $AGENT_NAME ($AGENT_SLUG)"
     git push origin main
   fi
@@ -143,7 +146,7 @@ retry() {
 }
 
 # =============================================
-# 处理 Pull Requests (v6.0 新增)
+# 处理 Pull Requests
 # =============================================
 
 process_prs() {
@@ -157,7 +160,7 @@ process_prs() {
   fi
 
   local processed=0
-  local replied=0
+  local found=0
 
   echo "$PR_DATA" | jq -c ".[]" | while read -r pr; do
     local P_NUM=$(echo "$pr" | jq -r '.number')
@@ -167,8 +170,8 @@ process_prs() {
 
     processed=$((processed + 1))
 
-    # 获取 PR 详情用于检测
-    local PR_DETAILS=$(gh pr view "$P_NUM" --json comments,author 2>/dev/null)
+    # 获取 PR 详情
+    local PR_DETAILS=$(gh pr view "$P_NUM" --json comments,author,statusCheckRollup 2>/dev/null)
     local LAST_COMMENT_AUTHOR=$(echo "$PR_DETAILS" | jq -r '.comments[-1].author.login // "ghost"')
     
     # 最后发言人保护
@@ -177,47 +180,53 @@ process_prs() {
        local TAGGED_IN_LAST=$(echo "$PR_DETAILS" | jq -r '.comments[-1].body' | grep -i "$VIRTUAL_MENTION" | wc -l)
        
        if [ "$TAGGED_IN_BODY" -eq "0" ] && [ "$TAGGED_IN_LAST" -eq "0" ]; then
-         log "INFO" "I am the last speaker in PR #$P_NUM and no new tag, skipping"
          continue
        fi
     fi
 
-    # 自动关闭逻辑 (v6.0 新增)
+    # 自动关闭逻辑 (Agency Lead)
     if [ "$AGENT_SLUG" = "xiaoxi" ]; then
        local IS_VERIFIED=$(echo "$PR_DETAILS" | jq -r '.comments[].body' | grep -E "\[Answer\].*VERIFIED" | wc -l)
        if [ "$IS_VERIFIED" -gt "0" ]; then
-         echo "🏁 PR #$P_NUM is VERIFIED. Closing/Merging..."
-         log "INFO" "Closing PR #$P_NUM (Verified by Answer)"
-         gh_api pr_comment "$P_NUM" --body "[小溪]: 经 @agent/answer 验证通过，准予合并/关闭。"
-         gh_api pr_close "$P_NUM"
+         echo "🚨 ACTION_REQUIRED: Merge/Close PR #$P_NUM (Verified by Answer)"
          continue
        fi
     fi
 
-    # 逻辑同 Issue，但侧重于 Review
+    # 检测触发
     local IS_TAGGED=$(echo "$P_TITLE $P_BODY $PR_DETAILS" | grep -i "$VIRTUAL_MENTION" | wc -l)
+    local IS_ROLE_TASK=$(echo "$P_LABELS" | grep -i "$MY_ROLE_LABEL" | wc -l)
     
-    if [ "$IS_TAGGED" -gt "0" ] || echo "$P_LABELS" | grep -q "$MY_ROLE_LABEL"; then
-       # 检查是否已回复
-       local OWN_COMMENTS=$(echo "$PR_DETAILS" | jq -r ".comments[] | select(.body | contains(\"[$AGENT_NAME]\")) | .body" 2>/dev/null)
+    # Answer 特有逻辑：检查 CI 状态
+    if [ "$AGENT_SLUG" = "answer" ]; then
+       local CI_STATUS=$(echo "$PR_DETAILS" | jq -r '.statusCheckRollup[].status // "unknown"')
+       if [ "$CI_STATUS" = "COMPLETED" ] || [ "$CI_STATUS" = "SUCCESS" ]; then
+         echo "🚨 ACTION_REQUIRED: Audit PR #$P_NUM (CI Passed - Ready for Audit)"
+       elif [ "$CI_STATUS" = "FAILURE" ]; then
+         echo "🚨 ACTION_REQUIRED: Review PR #$P_NUM (CI Failed - Investigation Required)"
+       fi
+    fi
+
+    if [ "$IS_TAGGED" -gt "0" ] || [ "$IS_ROLE_TASK" -gt "0" ]; then
+       # 检查是否已实质性回复
+       local OWN_COMMENTS=$(echo "$PR_DETAILS" | jq -r ".comments[] | select(.author.login | contains(\"$AGENT_SLUG\")) | .body" 2>/dev/null)
        if has_real_reply "$OWN_COMMENTS" "$AGENT_NAME"; then
-         log "INFO" "PR #$P_NUM already has reply, skipping"
          continue
        fi
 
+       found=$((found + 1))
+       echo "🚨 ACTION_REQUIRED: PR #$P_NUM: $P_TITLE"
+       echo "   Type: Pull Request"
+       echo "   Context: $(echo "$PR_DETAILS" | jq -r '.comments[-5:].body // ""')"
+       echo "   CI Status: $(echo "$PR_DETAILS" | jq -r '.statusCheckRollup[].status // "N/A")"
+       echo "   Instruction: Review and provide a substantive [PROPOSAL] or [AUDIT]."
        echo "------------------------------------------------"
-       echo "🔀 PR #$P_NUM: $P_TITLE"
-       local CONTEXT=$(echo "$PR_DETAILS" | jq -r '.comments[-5:].body // ""')
-       local RESPONSE_BODY=$(build_direct_response "$P_TITLE" "$CONTEXT")
-       
-       if gh_api pr_comment "$P_NUM" --body "$RESPONSE_BODY"; then
-         log "INFO" "Replied to PR #$P_NUM"
-         log_diary "Replied to PR #$P_NUM"
-         replied=$((replied + 1))
-       fi
     fi
   done
+
+  log "INFO" "PRs: processed=$processed action_required=$found"
 }
+
 
 # 辅助函数扩展
 gh_api() {
@@ -288,106 +297,13 @@ curl -s -X POST "$DASHBOARD_URL/api/agents" \
 jq ".last_run = \"$(date -Iseconds)\"" "$STATE_FILE" > /tmp/state_tmp.json && mv /tmp/state_tmp.json "$STATE_FILE"
 
 # =============================================
-# 回复模板 (Agency v5.0 - Substance Only)
+# 核心逻辑：回复判定
 # =============================================
 
-build_broadcast_response() {
-  local title="$1"
-  local context="$2"
-  cat << EOF
-[$AGENT_NAME] [skill/all]/DRAFT: 针对广播任务 "$title" 的专家方案初稿
-
-## 🧐 现状分析
-依据上下文，我识别出以下核心要点：
-$(echo "$context" | sed 's/^/> /')
-
-## 🚀 建议动作 (Agency Strategy)
-1. **深度对齐**: 建议对当前架构进行 Agency-style 审计。
-2. **专业分工**: 建议由 @agent/taizi 负责代码落地，@agent/answer 负责现实校对。
-
-## 🎯 预期产出
-- 完善的系统架构图
-- 经过审计的代码 PR
-
----
-*署名: $AGENT_NAME ($MY_ROLE)*
-*依据: Agency-Agents 专业分工标准 v5.0*
-EOF
-}
-
-build_direct_response() {
-  local title="$1"
-  local context="$2"
-  cat << EOF
-[$AGENT_NAME] [skill/$AGENT_SLUG]/PROPOSAL: 针对艾特请求的回应
-
-## 📝 任务背景
-任务: $title
-上下文简述: $(echo "$context" | tail -n 2)
-
-## 💡 技术提议
-我已对该问题进行了初步评估。我的专业建议是：
-- [ ] 优先解决身份识别 Bug
-- [ ] 注入对话上下文以提升 LLM 感知力
-
-## 📅 下一步
-请反馈对此方案的看法。
-
----
-*署名: $AGENT_NAME ($MY_ROLE)*
-EOF
-}
-
-build_role_task_response() {
-  local title="$1"
-  local role="$2"
-  cat << EOF
-[$AGENT_NAME] [skill/$role]/PLAN: 任务领用及执行计划
-
-## 🎯 核心目标
-$title
-
-## 🛠️ 执行路径 (Proven Workflow)
-1. **审计 (Audit)**: 对现有代码进行静态扫描。
-2. **实施 (Implement)**: 按照 $role 专业标准进行开发。
-3. **验证 (Evidence)**: 提供测试日志作为交付凭证。
-
-## ⚠️ 风险点
-- 需要确保 TOKEN 权限覆盖所有子模块。
-
----
-*署名: $AGENT_NAME ($MY_ROLE)*
-EOF
-}
-
-build_claim_response() {
-  local title="$1"
-  cat << EOF
-[$AGENT_NAME] [skill/$MY_ROLE]/CLAIM: 专属任务认领
-
-我已领用任务 "$title"，并根据 $MY_ROLE 职责制定了以下交付计划：
-
-## 📦 计划产出物 (Deliverables)
-- [ ] 详细的技术审计报告
-- [ ] 优化的脚本组件
-
-## ⏳ 时间线
-- 30分钟内提交第一份实质性报告。
-
----
-*署名: $AGENT_NAME ($MY_ROLE)*
-EOF
-}
-
-
-# =============================================
-# 核心逻辑：检查是否已有实质性回复
-# =============================================
 
 is_last_speaker() {
   local last_author="$1"
-  [ "$last_author" = "ghost" ] && return 1 # Ignore ghost (deleted users)
-  # Check if the last speaker is me (by login or by checking if the body contains my slug/name)
+  [ "$last_author" = "ghost" ] && return 1
   [[ "$last_author" == *"$AGENT_SLUG"* ]] && return 0
   return 1
 }
@@ -397,13 +313,8 @@ has_real_reply() {
   local agent_name="$2"
   local slug="$AGENT_SLUG"
 
-  # 检查多种格式的回复标识符
-  # 1. [Name] 格式
-  # 2. @agent/slug 格式
-  # 3. 实质性内容（排除纯模板占位符）
   echo "$comments" | grep -Ei "(\[$agent_name\]|@agent/$slug|@$slug)" | \
     grep -vE "收到任务|已领用|已收到广播|认领任务|\[ACK\]" | grep -q .
-  
   return $?
 }
 
@@ -437,7 +348,7 @@ process_discussions() {
   fi
 
   local processed=0
-  local replied=0
+  local found=0
 
   echo "$DISC_DATA" | jq -c "." | while read -r disc; do
     local D_NUM=$(echo "$disc" | jq -r '.number')
@@ -447,13 +358,12 @@ process_discussions() {
 
     processed=$((processed + 1))
 
-    # 1. 检查最后发言人，如果是自己且没有新的 @mention，则跳过
+    # 1. 最后发言人保护
     local IS_ME_TAGGED=$(echo "$D_TITLE $D_BODY" | grep -i "$VIRTUAL_MENTION" | wc -l)
     local NEW_COMMENTS_TAGGED=$(echo "$disc" | jq -r '.comments.nodes[].body' | tail -n 1 | grep -i "$VIRTUAL_MENTION" | wc -l)
     
     if is_last_speaker "$LAST_AUTHOR"; then
        if [ "$IS_ME_TAGGED" -eq "0" ] && [ "$NEW_COMMENTS_TAGGED" -eq "0" ]; then
-         log "INFO" "I am the last speaker in Discussion #$D_NUM and no new tag, skipping to prevent loop"
          continue
        fi
     fi
@@ -462,85 +372,31 @@ process_discussions() {
     local COMMENTS_TEXT=$(echo "$disc" | jq -r '.comments.nodes[].body // ""' | tr '\n' ' ')
     local ALL_TEXT="$D_TITLE $D_BODY $COMMENTS_TEXT"
 
-
     # 检测触发条件
     local HAS_SKILL_ALL=$(echo "$ALL_TEXT" | grep -i "$SKILL_ALL_LABEL" | wc -l)
     local IS_AGENT_ALL=$(echo "$ALL_TEXT" | grep -i "$AGENT_ALL_MENTION" | wc -l)
     local IS_TAGGED=$(echo "$ALL_TEXT" | grep -i "$VIRTUAL_MENTION" | wc -l)
     local HAS_MY_ROLE=$(echo "$ALL_TEXT" | grep -i "$MY_ROLE_LABEL" | wc -l)
 
-    # 获取自己的回复
-    local OWN_REPLIES=$(echo "$disc" | jq -r ".comments.nodes[] | select(.body | contains(\"[$AGENT_NAME]\")) | .body" 2>/dev/null)
+    if [ "$HAS_SKILL_ALL" -gt "0" ] || [ "$IS_AGENT_ALL" -gt "0" ] || [ "$IS_TAGGED" -gt "0" ] || [ "$HAS_MY_ROLE" -gt "0" ]; then
+       # 检查是否已实质性回复
+       local OWN_REPLIES=$(echo "$disc" | jq -r ".comments.nodes[] | select(.author.login | contains(\"$AGENT_SLUG\")) | .body" 2>/dev/null)
+       if has_real_reply "$OWN_REPLIES" "$AGENT_NAME"; then
+         continue
+       fi
 
-    # 判断是否需要回复
-    local SHOULD_RESPOND=0
-    local REASON=""
-    local RESPONSE_TYPE=""
-
-    if [ "$HAS_SKILL_ALL" -gt "0" ]; then
-      SHOULD_RESPOND=1
-      REASON="skill/all broadcast"
-      RESPONSE_TYPE="broadcast"
-    elif [ "$IS_AGENT_ALL" -gt "0" ]; then
-      SHOULD_RESPOND=1
-      REASON="@agent/all mentioned"
-      RESPONSE_TYPE="broadcast"
-    elif [ "$IS_TAGGED" -gt "0" ]; then
-      SHOULD_RESPOND=1
-      REASON="direct @mention"
-      RESPONSE_TYPE="direct"
-    elif [ "$HAS_MY_ROLE" -gt "0" ]; then
-      SHOULD_RESPOND=1
-      REASON="$MY_ROLE_LABEL role task"
-      RESPONSE_TYPE="role_task"
-    fi
-
-    # 检查是否已有回复（幂等性）
-    if [ "$SHOULD_RESPOND" -eq "1" ]; then
-      if has_real_reply "$OWN_REPLIES" "$AGENT_NAME"; then
-        log "INFO" "Discussion #$D_NUM already has reply from $AGENT_NAME, skipping"
-        continue
-      fi
-
-      echo "------------------------------------------------"
-      echo "🗣️ DISCUSSION #$D_NUM: $D_TITLE"
-      echo "📌 Trigger: $REASON"
-      log "INFO" "Processing Discussion #$D_NUM: $REASON"
-
-      local RESPONSE_BODY=""
-      local CONTEXT=$(echo "$disc" | jq -r '.comments.nodes[-3:].body // ""')
-      
-      case "$RESPONSE_TYPE" in
-        broadcast)
-          echo "📢 Generating broadcast response..."
-          RESPONSE_BODY=$(build_broadcast_response "$D_TITLE" "$CONTEXT")
-          ;;
-        direct)
-          echo "💬 Generating direct mention response..."
-          RESPONSE_BODY=$(build_direct_response "$D_TITLE" "$CONTEXT")
-          ;;
-        role_task)
-          echo "🎯 Generating role task response..."
-          RESPONSE_BODY=$(build_role_task_response "$D_TITLE" "$MY_ROLE")
-          ;;
-      esac
-
-
-      if gh_api discussion_comment "$D_NUM" --body "$RESPONSE_BODY"; then
-        log "INFO" "Replied to Discussion #$D_NUM"
-        log_diary "Replied to Discussion #$D_NUM ($REASON)"
-        replied=$((replied + 1))
-
-        update_stats "replies"
-      else
-        log "ERROR" "Failed to reply to Discussion #$D_NUM"
-        update_stats "errors"
-      fi
+       found=$((found + 1))
+       echo "🚨 ACTION_REQUIRED: Discussion #$D_NUM: $D_TITLE"
+       echo "   Type: Discussion"
+       echo "   Context: $(echo "$disc" | jq -r '.comments.nodes[-3:].body // ""')"
+       echo "   Instruction: Please provide a substantive [PROPOSAL] or [DRAFT]."
+       echo "------------------------------------------------"
     fi
   done
 
-  log "INFO" "Discussions: processed=$processed replied=$replied"
+  log "INFO" "Discussions: processed=$processed action_required=$found"
 }
+
 
 # =============================================
 # 处理 Issues
@@ -555,6 +411,66 @@ process_issues() {
     log "INFO" "No open issues found"
     return
   fi
+
+  local processed=0
+  local found=0
+
+  echo "$ISSUE_DATA" | jq -c ".[]" | while read -r issue; do
+    local I_NUM=$(echo "$issue" | jq -r '.number')
+    local I_TITLE=$(echo "$issue" | jq -r '.title')
+    local I_BODY=$(echo "$issue" | jq -r '.body // ""')
+    local I_LABELS=$(echo "$issue" | jq -r '.labels[].name' | tr '\n' ' ')
+
+    processed=$((processed + 1))
+
+    # 获取详情
+    local ISSUE_DETAILS=$(gh issue view "$I_NUM" --json comments,author 2>/dev/null)
+    local LAST_COMMENT_AUTHOR=$(echo "$ISSUE_DETAILS" | jq -r '.comments[-1].author.login // "ghost"')
+    
+    # 最后发言人保护
+    if is_last_speaker "$LAST_COMMENT_AUTHOR"; then
+       local TAGGED_IN_BODY=$(echo "$I_TITLE $I_BODY" | grep -i "$VIRTUAL_MENTION" | wc -l)
+       local TAGGED_IN_LAST=$(echo "$ISSUE_DETAILS" | jq -r '.comments[-1].body' | grep -i "$VIRTUAL_MENTION" | wc -l)
+       
+       if [ "$TAGGED_IN_BODY" -eq "0" ] && [ "$TAGGED_IN_LAST" -eq "0" ]; then
+         continue
+       fi
+    fi
+
+    # 自动关闭逻辑 (Agency Lead)
+    if [ "$AGENT_SLUG" = "xiaoxi" ]; then
+       local IS_VERIFIED=$(echo "$ISSUE_DETAILS" | jq -r '.comments[].body' | grep -E "\[Answer\].*VERIFIED" | wc -l)
+       if [ "$IS_VERIFIED" -gt "0" ]; then
+         echo "🚨 ACTION_REQUIRED: Close Issue #$I_NUM (Verified by Answer)"
+         continue
+       fi
+    fi
+
+    # 检测触发
+    local IS_TAGGED=$(echo "$I_TITLE $I_BODY $ISSUE_DETAILS" | grep -i "$VIRTUAL_MENTION" | wc -l)
+    local IS_ROLE_TASK=$(echo "$I_LABELS" | grep -i "$MY_ROLE_LABEL" | wc -l)
+    local IS_SKILL_ALL=$(echo "$I_LABELS" | grep -i "$SKILL_ALL_LABEL" | wc -l)
+
+    if [ "$IS_TAGGED" -gt "0" ] || [ "$IS_ROLE_TASK" -gt "0" ] || [ "$IS_SKILL_ALL" -gt "0" ]; then
+       # 检查是否已实质性回复
+       local OWN_COMMENTS=$(echo "$ISSUE_DETAILS" | jq -r ".comments[] | select(.author.login | contains(\"$AGENT_SLUG\")) | .body" 2>/dev/null)
+       if has_real_reply "$OWN_COMMENTS" "$AGENT_NAME"; then
+         continue
+       fi
+
+       found=$((found + 1))
+       echo "🚨 ACTION_REQUIRED: Issue #$I_NUM: $I_TITLE"
+       echo "   Type: Issue"
+       echo "   Labels: $I_LABELS"
+       echo "   Context: $(echo "$ISSUE_DETAILS" | jq -r '.comments[-3:].body // ""')"
+       echo "   Instruction: Analyze and provide a substantive [PROPOSAL] or [DELIVERABLE]."
+       echo "------------------------------------------------"
+    fi
+  done
+
+  log "INFO" "Issues: processed=$processed action_required=$found"
+}
+
 
   local processed=0
   local replied=0
@@ -686,14 +602,30 @@ final_push() {
     # 检查是否有改动
     if git status --porcelain "$role_dir" | grep -q .; then
       log "INFO" "Persisting memory and diary to repository..."
+      # Concurrency Fix: Pull with rebase and random backoff
+      sleep $((RANDOM % 15))
       git add "$role_dir"
+      git pull --rebase origin main
       git commit -m "chore: update memory/diary for $AGENT_NAME ($(date +%Y-%m-%d))"
       git push origin main
     fi
   fi
 }
 
+check_memory_bloat() {
+  local role_dir="roles/$AGENT_SLUG"
+  [ ! -d "$role_dir" ] && return
+  
+  local diary_count=$(find "$role_dir/diary" -name "*.md" | wc -l)
+  if [ "$diary_count" -gt 10 ]; then
+    echo "🚨 ACTION_REQUIRED: Memory Compaction"
+    echo "   Reason: You have $diary_count diary entries. Please summarize them into IDENTITY.md milestones and archive old entries."
+    echo "------------------------------------------------"
+  fi
+}
+
 main() {
+  check_memory_bloat
   process_discussions
   echo ""
   process_issues

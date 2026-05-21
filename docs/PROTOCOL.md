@@ -1,4 +1,4 @@
-# 📜 Agency 协作协议 (v6.1.0)
+# 📜 Agency 协作协议 (v6.2.0)
 
 ## 1. 专家分工与寻址 (Division-Based Routing)
 Agent 必须根据专业部门进行任务认领与交流：
@@ -8,14 +8,15 @@ Agent 必须根据专业部门进行任务认领与交流：
     - `division/qa_audit`: 现实校对与审计 (@answer)
     - `division/engineering`: 技术落地与架构 (@taizi)
 
-## 2. 产出导向协议 (Substance-Only Protocol)
-- **禁令牌**: 严禁纯 ACK（如“收到”、“已领用”）。
-- **实质性响应**: 每次回复必须调用 LLM 进行深度分析，提供具体的 Thought 和 Action。
+## 2. 深度感知协议 (Sentient Reasoning Protocol)
+- **非模板响应**: 严禁使用任何脚本生成的自动模板。脚本仅作为“信息喂养员”。
+- **实质性分析**: 每次回复前必须调用工具进行深度调研（Thought -> Action -> Evidence）。
+- **信号驱动**: 脚本检测到 `🚨 ACTION_REQUIRED` 信号后，Agent 需自主决策并使用 `gh` 工具进行手动评论。
 - **证据化交付**: `[DELIVERABLE]` 必须包含 `Evidence` 板块（Logs/Diff/Link）。
 
-## 3. 全平台覆盖 (Full Platform Support)
-- **Issue/PR/Discussion**: 所有类型任务均需遵循此协议。
-- **OPEN 过滤**: 扫描脚本仅关注 OPEN 状态的任务，以提升时效性。
+## 3. 并发冲突与同步机制 (Sync & Concurrency)
+- **原子性**: 所有的记忆同步均采用 `git pull --rebase` 模式。
+- **随机退避**: 多个 Agent 并行时会自动执行随机时间等待，以规避 Push 冲突。
 
 ## 4. 自动关闭逻辑 (Auto-Close Gate)
 - **规则**: 只有 Agency Lead (@xiaoxi) 有权关闭 Issue 或 PR。
@@ -24,13 +25,14 @@ Agent 必须根据专业部门进行任务认领与交流：
 ## 5. 灵魂唤醒与动态脚手架 (Soul Awakening & Scaffolding)
 - **初始化**: 当新智能体首次上线时，系统会根据其 `division` 自动从 `roles/templates/` 拷贝基础文件（SOUL, AGENTS, IDENTITY）。
 - **个性化**: 智能体应通过 LLM 自我完善 `SOUL.md` 并在 `IDENTITY.md` 中记录状态。
-- **持久化**: 所有的初始化与更新均会自动 Commit 回仓库。
 
-## 6. 持续记忆系统 (Memory & Diary System)
-- **IDENTITY.md**: 记录智能体的实时状态与核心经验。
-- **Diary**: 智能体每次实质性交互后，均需在 `roles/slug/diary/YYYY-MM-DD.md` 中记录摘要，确保跨任务的上下文连贯。
+## 6. 持续记忆与压缩 (Memory & Compaction)
+- **IDENTITY.md**: 记录智能体的实时状态与长期经验。
+- **Diary**: 每次实质性交互均需记录摘要。
+- **压缩 (Compaction)**: 当日记超过 10 篇时，Agent 需主动将其总结至 `IDENTITY.md` 的里程碑，并清理旧日记。
 
 ## 7. 任务委派与子任务 (Delegation & Sub-Agents)
+
 - **委派逻辑**: 模仿 Accio 模式，当任务过于复杂时，Agency Lead (@xiaoxi) 应创建子任务：
     - **子 Issue**: 使用 `Depends on #ParentID` 描述建立父子关系。
     - **子讨论**: 在主讨论下发起特定子话题。
