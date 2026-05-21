@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [6.3.3] - 2026-05-22
+### Fixed
+- **skill/all 广播**: agents 不再发送模板占位符和纯 ACK，改为生成真实分析内容
+- **scan_issues.sh**: 移除模板占位符评论
+- **scan_discussions.sh**: 移除 ACK 自动评论
+- **HAS_REAL_REPLY 检测**: 支持新格式 `[slug]/analyzed` 和 `[slug] /`
+
 ## [6.3.2b] - 2026-05-21
 ### Fixed
 - **scan_discussions.sh:55**: 空值比较错误 `HAS_ACK` 修复为 `${HAS_ACK:-0}`
