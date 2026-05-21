@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Multi-Agent Inbox Processor (v3.5.0)
+# Multi-Agent Inbox Processor (v6.4.0)
 # Agent 身份从 agents.json 自动读取
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

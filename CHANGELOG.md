@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.3.0] - 2026-05-21
+### Changed
+- **scan_issues.sh v6.4.0**: 重大逻辑重构
+  - **禁止自动认领**: 不再自动认领任务，只在被 @ 时响应
+  - **skill/all 新语义**: 所有非 commander agent 发送 `[slug]/analyzed` 格式分析
+  - **评论格式**: 使用 `[agent/slug]/analyzed` 替代旧 ACK 格式
+  - **skill/all 跳过 commander**: commander 负责协调，不参与具体执行分析
+- **inbox_processor.sh v6.4.0**: 版本同步
+- **agents.json**: 修复 `role` 字段映射 (xiaoxi→commander, answer→collector, taizi→executor)
+
+### Fixed
+- **Issue #70 重复触发**: 根因是 Answer cron 从未添加 + 旧逻辑自动认领
+
+### Architecture
+- **Source of Truth**: SKILL.md + roles/*/SOUL.md
+- **Behavior**: @mention = 直接响应, skill/all = 全员分析（除 commander）
+
 ## [4.2.0] - 2026-05-21
 ### Added
 - **sync_personality.sh v2.0**: Personality 同步脚本增强
