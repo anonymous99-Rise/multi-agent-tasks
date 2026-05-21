@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [6.4.0] - 2026-05-22
+### Added
+- **skill/all 全员评论**: 所有 agent（commander/collector/executor）都必须评论 skill/all 广播
+- **Role-aware prompts**: AI 提示词包含角色上下文（commander/collector/executor 视角）
+- **Framework-aware AI invoke**: scan_issues.sh 支持 openclaw/hermes 两种调用
+- **AGENT_ROLE 上下文**: prompt 中使用 $AGENT_ROLE 而非 $MY_ROLE_LABEL（division/xxx）
+
+### Fixed
+- **scan_discussions.sh**: 修复 hermes stdin 传递问题
+
 ## [6.3.3] - 2026-05-22
 ### Fixed
 - **skill/all 广播**: agents 不再发送模板占位符和纯 ACK，改为生成真实分析内容
@@ -15,6 +25,7 @@ All notable changes to this project will be documented in this file.
 - **daily_report.sh:61**: JSON 引号匹配问题（多余 `"`）
 
 ## [6.3.2] - 2026-05-21
+## [6.4.0] - 2026-05-22
 ### Added
 - **scan_issues.sh v6.4.0**: 重大逻辑重构
   - **禁止自动认领**: 不再自动认领任务，只在被 @ 时响应
@@ -27,6 +38,7 @@ All notable changes to this project will be documented in this file.
 - **Issue #70 重复触发**: 根因是 Answer cron 从未添加 + 旧逻辑自动认领
 
 ## [6.3.1] - 2026-05-21
+## [6.4.0] - 2026-05-22
 ### Added
 - **sync_personality.sh v2.0**: Personality 同步脚本增强
   - 从 `roles/*/SOUL.md` 提取 `soul` (agent-specific identity)
@@ -47,6 +59,7 @@ All notable changes to this project will be documented in this file.
 All notable changes to this project will be documented in this file.
 
 ## [4.2.0] - 2026-05-21
+## [6.4.0] - 2026-05-22
 ### Added
 - **sync_personality.sh v2.0**: Personality 同步脚本增强
   - 从 `roles/*/SOUL.md` 提取 `soul` (agent-specific identity)
@@ -80,6 +93,7 @@ hermes cron add --command "source $MAT_ROOT/scripts/init_env.sh hermes && cd $MA
 ```
 
 ## [4.1.0] - 2026-05-21
+## [6.4.0] - 2026-05-22
 ### Added
 - **init_env.sh**: 跨平台路径自动检测与初始化脚本
   - 自动检测框架 (openclaw/hermes)
@@ -103,6 +117,7 @@ hermes cron add --command "source $MAT_ROOT/scripts/init_env.sh hermes && cd $MA
 | Hermes | `~/.hermes/skills/multi-agent-tasks` | `%USERPROFILE%/.hermes/skills/multi-agent-tasks` |
 
 ## [4.0.0] - 2026-05-21
+## [6.4.0] - 2026-05-22
 ### Added
 - **agency-agents 标准文件结构**: SOUL.md + IDENTITY.md + SKILL.md 三文件分离
   - `SOUL.md`: 性格定义、沟通风格、学习记忆（基于 agency-agents SOUL.md 格式）
@@ -127,6 +142,7 @@ skills/task-hub-executor/IDENTITY.md
 ```
 
 ## [3.10.0] - 2026-05-21
+## [6.4.0] - 2026-05-22
 ### Added
 - **inbox_processor.sh v3.6.0**: 基于 agency-agents 最佳实践重构
 
@@ -152,6 +168,7 @@ skills/task-hub-executor/IDENTITY.md
 - inbox_processor.sh v3.5.0 (233行) → v3.6.0 (455行)
 
 ## [3.9.0] - 2026-05-21
+## [6.4.0] - 2026-05-22
 ### Added
 - **agency-agents 最佳实践**: 基于 144+ agents 项目优化 SKILL.md
 - **Core Mission 章节**: 核心使命定义
@@ -172,6 +189,7 @@ skills/task-hub-executor/IDENTITY.md
 - **docs/review_and_optimization_CN.md**: agency-agents 对比分析文档
 
 ## [3.8.0] - 2026-05-21
+## [6.4.0] - 2026-05-22
 ### Added
 - **sync_personality.sh**: 自动化同步脚本，从 SKILL.md 读取 personality 到 agents.json
   - Source of Truth: SKILL.md 的 `## 🎭 性格定义` 章节
@@ -182,6 +200,7 @@ skills/task-hub-executor/IDENTITY.md
 - **agents.json 更新**: 重新从 SKILL.md 同步 personality 数据
 
 ## [3.7.0] - 2026-05-21
+## [6.4.0] - 2026-05-22
 ### Added
 - **skill/role 广播支持**: inbox_processor.sh v3.5.0 支持 skill/executor、skill/collector 等角色专属广播
 - **严格回复格式校验**: `[skill/slug]/analyzed` 格式，使用 `grep -E` 正则匹配
@@ -198,6 +217,7 @@ skills/task-hub-executor/IDENTITY.md
 - **回复判定逻辑**: `HAS_REAL_REPLY` 改用 `grep -E '\[skill/[a-z-]+\]/analyzed'` 严格校验
 
 ## [3.6.0] - 2026-05-21
+## [6.4.0] - 2026-05-22
 ### Added
 - **Personality 性格系统**: SKILL.md 定义角色性格，agents.json 同步
   - `personality.trait`: 角色类型（指挥官/执行者/汇总者）
@@ -219,6 +239,7 @@ skills/task-hub-executor/IDENTITY.md
 - **inbox_processor.sh v3.3.1 → v3.4.0**: 174行，LLM-Driven 架构
 
 ## [3.5.0] - 2026-05-21
+## [6.4.0] - 2026-05-22
 ### Added
 - **scripts/ 目录**: 所有脚本从 dashboard/public/ 移到 scripts/
   - `scripts/inbox_processor.sh` - 主入口
@@ -244,6 +265,7 @@ skills/task-hub-executor/IDENTITY.md
 - **webhook route.ts action scope**: 修复 TypeScript scope 错误，action 移到 if 块外面
 
 ## [3.4.0] - 2026-05-20
+## [6.4.0] - 2026-05-22
 ### Added
 - **模块化重构**: inbox_processor.sh 拆分为独立模块
   - `modules/quiet_period.sh` - 安静期控制（30分钟无活动才扫描）
@@ -272,6 +294,7 @@ skills/task-hub-executor/IDENTITY.md
 - **Fulfillment Debt Logic**: Improved the "Debt" detection to ensure agents follow up on `[ACK]` with actual `[PROPOSAL]` content.
 
 ## [3.3.0] - 2026-05-04
+## [6.4.0] - 2026-05-22
 ### Added
 - **Virtual Identity Routing**: Map Telegram bot mentions (e.g., `@Anwsermebot`) to internal GitHub mentions (`@agent/answer`).
 - **Fulfillment Protocol**: Automated `[ACK]` mechanism that creates a "contractual debt" for the agent to provide a substantive response in the next cycle.
@@ -279,16 +302,19 @@ skills/task-hub-executor/IDENTITY.md
 - **Heartbeat System**: Real-time "Online" status displayed on the Dashboard.
 
 ## [3.2.0] - 2026-05-03
+## [6.4.0] - 2026-05-22
 ### Added
 - **Native GitHub Discussions**: Switched from Issues-only communication to threaded Discussions via GraphQL.
 - **GraphQL Integration**: Bypassed GitHub CLI version limitations by using direct GraphQL API for Discussions.
 
 ## [3.1.0] - 2026-05-02
+## [6.4.0] - 2026-05-22
 ### Added
 - **Dashboard v3.0**: GitHub OAuth, encrypted secrets, and multi-language support (CN/EN).
 - **Telegram Webhook Automation**: Bridge GitHub events directly to Telegram groups.
 
 ## [3.0.0] - 2026-05-01
+## [6.4.0] - 2026-05-22
 ### Added
 - **Initial Multi-Agent Architecture**: Support for Answer, 太子, and 小溪 sharing a single GitHub account.
 - **Inbox Processor**: Baseline shell script for agents to poll GitHub state.
