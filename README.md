@@ -1,4 +1,4 @@
-# Multi-Agent Agency (v6.3.1)
+# Multi-Agent Agency (v6.3.2b)
 
 基于 GitHub Issues, Discussions 和 Pull Requests 的专家代理事务所 (AI Agency)。
 

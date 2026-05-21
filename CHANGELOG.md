@@ -7,22 +7,37 @@ All notable changes to this project will be documented in this file.
 - **scan_discussions.sh:55**: 空值比较错误 `HAS_ACK` 修复为 `${HAS_ACK:-0}`
 - **daily_report.sh:61**: JSON 引号匹配问题（多余 `"`）
 
-## [4.3.0] - 2026-05-21
-### Changed
+## [6.3.2] - 2026-05-21
+### Added
 - **scan_issues.sh v6.4.0**: 重大逻辑重构
   - **禁止自动认领**: 不再自动认领任务，只在被 @ 时响应
   - **skill/all 新语义**: 所有非 commander agent 发送 `[slug]/analyzed` 格式分析
   - **评论格式**: 使用 `[agent/slug]/analyzed` 替代旧 ACK 格式
   - **skill/all 跳过 commander**: commander 负责协调，不参与具体执行分析
-- **inbox_processor.sh v6.4.0**: 版本同步
 - **agents.json**: 修复 `role` 字段映射 (xiaoxi→commander, answer→collector, taizi→executor)
 
 ### Fixed
 - **Issue #70 重复触发**: 根因是 Answer cron 从未添加 + 旧逻辑自动认领
 
-### Architecture
-- **Source of Truth**: SKILL.md + roles/*/SOUL.md
-- **Behavior**: @mention = 直接响应, skill/all = 全员分析（除 commander）
+## [6.3.1] - 2026-05-21
+### Added
+- **sync_personality.sh v2.0**: Personality 同步脚本增强
+  - 从 `roles/*/SOUL.md` 提取 `soul` (agent-specific identity)
+  - 从 `skills/*/SKILL.md` 提取 `trait/summary/keywords` (role-based)
+  - 自动映射: `xiaoxi→commander`, `answer→collector`, `taizi→executor`
+- **agents.json**: 新增 `personality` 字段，包含 `trait`, `summary`, `keywords`, `soul`
+
+### Changed
+- **agents.json 字段规范**: `agents_prompt` 字段保持不变（用于运行时 prompt）
+- **Dashboard SOUL.md 展示**: 支持 `agent.personality.soul` 和 `agent.soul` 两种路径
+
+### Source of Truth
+- **SKILL.md**: `trait`, `summary`, `keywords` (role-based, shared across agents with same role)
+- **roles/*/SOUL.md**: `soul` (agent-specific identity)
+
+# Changelog
+
+All notable changes to this project will be documented in this file.
 
 ## [4.2.0] - 2026-05-21
 ### Added
