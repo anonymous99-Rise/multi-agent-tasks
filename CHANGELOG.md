@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.1.1] - 2026-05-21
+### Fixed
+- **generate_cron.js**: 修复两个问题
+  - 路径硬编码 `~/multi-agent-tasks` → 使用 `init_env.sh` 自动检测
+  - `--to "@slugbot"` → `--to "@tgUsername"` (从 agents.json 读取)
+- **docs/AGENT_GUIDE_PROMPT.md**: 更新 cron 示例
+- **ARCHITECTURE.md**: 更新 cron 示例
+
+### generate_cron.js 输出示例
+```bash
+# Answer (openclaw)
+openclaw cron add --name "Answer" --session isolated --message "source $MAT_ROOT/scripts/init_env.sh openclaw && cd $MAT_ROOT..." --announce --to "@Anwsermebot"
+
+# 太子 (hermes)
+hermes cron add --command "source $MAT_ROOT/scripts/init_env.sh hermes && cd $MAT_ROOT..."
+```
+
 ## [4.1.0] - 2026-05-21
 ### Added
 - **init_env.sh**: 跨平台路径自动检测与初始化脚本

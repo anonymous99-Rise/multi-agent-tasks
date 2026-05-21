@@ -51,19 +51,33 @@ multi-agent-tasks/
 | Answer | OpenClaw | `openclaw cron add` 命令 |
 | 太子 | Hermes | `hermes cron add` 命令 |
 
-**示例命令**：
+**使用 generate_cron.js 生成命令**：
+```bash
+# 自动从 agents.json 读取配置，生成正确的 cron 命令
+node scripts/generate_cron.js
+
+# 输出示例:
+# source scripts/init_env.sh [openclaw|hermes]
+# openclaw cron add --name "Answer" --cron "*/5 * * * *" --message "..." --announce --channel telegram --to "@Anwsermebot"
+```
+
+**手动命令示例**（不推荐，使用 generate_cron.js）：
 ```bash
 # OpenClaw (Answer)
-openclaw cron add --name "Answer" --cron "*/5 * * * *" --message 'cd ~/multi-agent-tasks && bash scripts/inbox_processor.sh "$TOKEN" "answer"' --announce --channel telegram --to "@Anwsermebot"
+openclaw cron add --name "Answer" --cron "*/5 * * * *" --session isolated --message "source \$MAT_ROOT/scripts/init_env.sh openclaw && cd \$MAT_ROOT && bash scripts/inbox_processor.sh \"\$TOKEN\" \"answer\"" --announce --channel telegram --to "@Anwsermebot"
 
 # Hermes (太子)
-hermes cron add --name "太子" --cron "*/5 * * * *" --command 'cd ~/multi-agent-tasks && bash scripts/inbox_processor.sh "$TOKEN" "taizi"'
+hermes cron add --name "太子" --cron "*/5 * * * *" --command "source \$MAT_ROOT/scripts/init_env.sh hermes && cd \$MAT_ROOT && bash scripts/inbox_processor.sh \"\$TOKEN\" \"taizi\""
 ```
 
 ## 手动运行测试
 
 ```bash
-cd ~/multi-agent-tasks
+# 1. 先初始化环境
+source scripts/init_env.sh
+
+# 2. 运行
+cd $MAT_ROOT
 bash scripts/inbox_processor.sh "$TOKEN" "{{AGENT_SLUG}}"
 ```
 

@@ -51,14 +51,19 @@ Multi-Agent Task Collaboration System，基于 GitHub Issues 和 Discussions 进
 | Answer | OpenClaw | `openclaw cron` 命令配置 |
 | 太子 | Hermes | `hermes cron` 命令配置 |
 
-**OpenClaw cron 示例**：
+**使用 generate_cron.js 生成命令**：
 ```bash
-openclaw cron add --name "Answer" --cron "*/5 * * * *" --message 'cd ~/multi-agent-tasks && bash scripts/inbox_processor.sh "$TOKEN" "answer"' --announce --channel telegram --to "@Anwsermebot"
+node scripts/generate_cron.js
 ```
 
-**Hermes cron 示例**：
+**OpenClaw cron 示例**（使用 init_env.sh）：
 ```bash
-hermes cron add --name "太子" --cron "*/5 * * * *" --command 'cd ~/multi-agent-tasks && bash scripts/inbox_processor.sh "$TOKEN" "taizi"'
+openclaw cron add --name "Answer" --cron "*/5 * * * *" --session isolated --message "source \$MAT_ROOT/scripts/init_env.sh openclaw && cd \$MAT_ROOT && bash scripts/inbox_processor.sh \"\$TOKEN\" \"answer\"" --announce --channel telegram --to "@Anwsermebot"
+```
+
+**Hermes cron 示例**（使用 init_env.sh）：
+```bash
+hermes cron add --name "太子" --cron "*/5 * * * *" --command "source \$MAT_ROOT/scripts/init_env.sh hermes && cd \$MAT_ROOT && bash scripts/inbox_processor.sh \"\$TOKEN\" \"taizi\""
 ```
 
 **优势**：
