@@ -42,7 +42,7 @@ echo "$ISSUE_DATA" | jq -c ".[]" | while read -r issue; do
   #    - executor：执行视角，提供落地思路和技术方案
 
   ISSUE_BODY=$(gh issue view $I_NUM --json body,title --jq '[.body, .title] | join(" ")' 2>/dev/null)
-  IS_TAGGED=$(echo "$ISSUE_BODY" | grep -iE "@agent/${AGENT_SLUG}|@agent/all" | wc -l)
+  IS_TAGGED=$(echo "$ISSUE_BODY" | grep -iE "@agent/${AGENT_SLUG}|@agent/all" | wc -l || echo "0")
 
   HAS_SKILL_ALL=$(echo "$I_LABELS" | grep -c "skill/all" || echo "0")
 
@@ -58,7 +58,7 @@ echo "$ISSUE_DATA" | jq -c ".[]" | while read -r issue; do
   # 2. agent/ 分析回复（[xxx]/analyzed 格式）— skill/all 场景下的分析报告
   # 3. skill/all 广播回复（[xxx] [division/xxx]/xxx 格式）— agent 的实质性广播回复
   HAS_REAL_REPLY=$(gh issue view $I_NUM --json comments --jq \
-    "[.comments[] | select(.author.login == \"agent/${AGENT_SLUG}\" and (.body | contains(\"[@${AGENT_SLUG}]\") or .body | contains(\"[${AGENT_SLUG}]/analyzed\") or (.body | contains(\"[${AGENT_SLUG}]\") and .body | contains(\"/\"))))] | length" 2>/dev/null)
+    "[.comments[] | select(.author.login == \"agent/${AGENT_SLUG}\" and (.body | contains(\"[@${AGENT_SLUG}]\") or .body | contains(\"[${AGENT_SLUG}]/analyzed\") or (.body | contains(\"[${AGENT_SLUG}]\") and .body | contains(\"/\"))))] | length" 2>/dev/null || echo "0")
 
   HAS_QA_PASS=$(echo "$I_LABELS" | grep -c "task/qa-pass" || echo "0")
 

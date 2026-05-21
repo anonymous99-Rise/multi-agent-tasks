@@ -37,7 +37,7 @@ echo "$DISC_DATA" | jq -c "." | while read -r disc; do
 
   # 检查是否被艾特（标题+正文，不查评论避免自己触发自己）
   # @agent/all → 所有agent都要回，@agent/taizi → 只有我回
-  IS_TAGGED=$(echo "$disc" | jq -r ".title, .body" | grep -iE "@agent/all|@agent/${AGENT_SLUG}" | wc -l)
+  IS_TAGGED=$(echo "$disc" | jq -r ".title, .body" | grep -iE "@agent/all|@agent/${AGENT_SLUG}" | wc -l || echo "0")
 
   # skill/all label 也视为被艾特（全员广播）
   D_LABELS=$(echo "$disc" | jq -r ".labels.nodes[].name" 2>/dev/null)
