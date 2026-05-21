@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [6.6.0] - 2026-05-22
+### Added
+- **Dashboard 性格展示增强**: Agent 卡片 personality 区块全面升级
+  - Trait badge 升级为渐变 + ★ 图标
+  - Keywords 分级展示（前3个突出，其余用 #hashtag 格式）
+  - Summary 玻璃态容器
+  - 来源标注 skill 路径
+- **agents_prompt 增强**: 展示完整内容 + 字数统计 + Terminal 图标
+- **SOUL.md 增强**: 深紫色渐变背景 + 始终展开 + 最大高度滚动
+- **Sparkles 图标**: SOUL.md 区块新增黄色闪光图标
+
+### Changed
+- **agents.json 字段规范**: `hermes_prompt` → `agents_prompt`（已完成）
+- **skill/all 语义强化**: 所有 agent 必须发送实质性回复（禁止纯 ACK）
+- **分析结果格式**: 统一使用 `[slug]/analyzed` 前缀格式
+
+### Fixed
+- **quiet hours 实现**: inbox_processor.sh 入口统一检查，凌晨 1:00-8:30 静默跳过
+- **null guards**: 所有 `grep -c` / `wc -l` 添加 `|| echo "0"` 兜底
+
 ## [6.5.0] - 2026-05-22
 ### Added
 - **Framework badge**: Agent 卡片展示框架标识（Hermes 🟣 / OpenClaw 🟠）

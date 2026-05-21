@@ -2,7 +2,7 @@
 
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useEffect, useState, useMemo } from "react";
-import { Plus, CheckCircle2, Circle, Clock, Loader2, Globe, Settings, Terminal, ListTodo, Copy, Check, Filter, Send, MessageSquare, Trash2, ShieldCheck, User } from "lucide-react";
+import { Plus, CheckCircle2, Circle, Clock, Loader2, Globe, Settings, Terminal, ListTodo, Copy, Check, Filter, Send, MessageSquare, Trash2, ShieldCheck, User, Sparkles } from "lucide-react";
 import { translations, Locale } from "@/lib/i18n";
 
 export default function Home() {
@@ -666,38 +666,62 @@ export default function Home() {
                           </button>
                         </div>
                         
+                        {/* ========== 性格展示 (Personality) ========== */}
                         {agent.personality && (
-                          <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-black rounded-full uppercase">
-                                {agent.personality.trait || agent.role}
-                              </span>
-                              {agent.framework === "hermes" && (
-                                <span className="px-1.5 py-0.5 bg-purple-100 text-purple-600 text-[10px] font-bold rounded border border-purple-200">
-                                  Hermes
+                          <div className="mb-4 p-4 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 rounded-xl border-2 border-blue-200 shadow-lg shadow-blue-100/50 relative overflow-hidden">
+                            {/* Decorative circle */}
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full opacity-30 -translate-y-1/2 translate-x-1/2"></div>
+
+                            <div className="relative">
+                              {/* Trait + Framework badges */}
+                              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                                <span className="px-3 py-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-black rounded-full uppercase shadow-md flex items-center gap-1">
+                                  ★ {agent.personality.trait || agent.role}
                                 </span>
+                                {agent.framework === "hermes" && (
+                                  <span className="px-2 py-0.5 bg-gradient-to-r from-purple-500 to-violet-500 text-white text-[10px] font-black rounded-full shadow-sm">
+                                    Hermes 🟣
+                                  </span>
+                                )}
+                                {agent.framework === "openclaw" && (
+                                  <span className="px-2 py-0.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-black rounded-full shadow-sm">
+                                    OpenClaw 🟠
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Top 3 keywords as colored pills */}
+                              <div className="flex flex-wrap gap-1.5 mb-3">
+                                {(agent.personality.keywords || []).slice(0, 3).map((kw: string, i: number) => (
+                                  <span key={i} className="px-2.5 py-1 bg-white/80 text-gray-700 text-[10px] font-bold rounded-full border border-gray-200 shadow-sm">
+                                    {kw}
+                                  </span>
+                                ))}
+                              </div>
+
+                              {/* Summary */}
+                              <p className="text-sm text-gray-700 leading-relaxed font-medium mb-3 bg-white/60 p-3 rounded-lg border border-white/80">
+                                {agent.personality.summary || 'No description'}
+                              </p>
+
+                              {/* All keywords */}
+                              {(agent.personality.keywords || []).length > 3 && (
+                                <div className="flex flex-wrap gap-1 mb-2">
+                                  {(agent.personality.keywords || []).slice(3).map((kw: string, i: number) => (
+                                    <span key={i} className="px-1.5 py-0.5 bg-white/50 text-gray-400 text-[9px] font-medium rounded border border-gray-200">
+                                      #{kw}
+                                    </span>
+                                  ))}
+                                </div>
                               )}
-                              {agent.framework === "openclaw" && (
-                                <span className="px-1.5 py-0.5 bg-orange-100 text-orange-600 text-[10px] font-bold rounded border border-orange-200">
-                                  OpenClaw
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-600 leading-relaxed mb-2">
-                              {agent.personality.summary || 'No description'}
-                            </p>
-                            <div className="flex flex-wrap gap-1">
-                              {(agent.personality.keywords || []).map((kw: string, i: number) => (
-                                <span key={i} className="px-1.5 py-0.5 bg-white text-gray-500 text-[10px] font-medium rounded border border-gray-200">
-                                  {kw}
-                                </span>
-                              ))}
-                            </div>
-                            <div className="mt-2 flex items-center gap-1">
-                              <span className="text-[9px] text-gray-400 font-medium">来源:</span>
-                              <code className="text-[9px] text-purple-600 font-mono bg-purple-50 px-1 rounded">
-                                {agent.role === "commander" ? "skills/task-hub-creator" : agent.role === "collector" ? "skills/task-hub-collector" : "skills/task-hub-executor"}/SKILL.md
-                              </code>
+
+                              {/* Source */}
+                              <div className="mt-2 flex items-center gap-1">
+                                <span className="text-[9px] text-gray-400 font-medium">来源:</span>
+                                <code className="text-[9px] text-purple-600 font-mono bg-purple-50 px-1 rounded">
+                                  {agent.role === "commander" ? "skills/task-hub-creator" : agent.role === "collector" ? "skills/task-hub-collector" : "skills/task-hub-executor"}/SKILL.md
+                                </code>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -740,25 +764,30 @@ export default function Home() {
                         </div>
                         
                         {agent.agents_prompt && (
-                          <div className="mt-3 p-2 bg-gray-900 rounded-lg">
-                            <div className="text-[10px] text-gray-500 font-black uppercase mb-1">agents_prompt</div>
-                            <p className="text-[10px] text-blue-400 font-mono line-clamp-2 leading-relaxed">
-                              {agent.agents_prompt.substring(0, 100)}...
+                          <div className="mt-3 p-4 bg-gray-900 rounded-xl shadow-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Terminal className="h-3 w-3 text-green-400" />
+                              <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider">agents_prompt</span>
+                              <span className="ml-auto text-[9px] text-gray-500 font-mono">{agent.agents_prompt.length} chars</span>
+                            </div>
+                            <p className="text-[11px] text-blue-400 font-mono leading-relaxed">
+                              {agent.agents_prompt}
                             </p>
                           </div>
                         )}
 
                         {(agent.personality?.soul || agent.soul) && (
-                          <details className="mt-3">
-                            <summary className="text-[10px] text-purple-600 font-black uppercase cursor-pointer hover:text-purple-800">
-                              SOUL.md
-                            </summary>
-                            <div className="mt-2 p-3 bg-purple-50 rounded-lg border border-purple-100 max-h-40 overflow-y-auto">
-                              <pre className="text-[10px] text-purple-800 whitespace-pre-wrap font-mono leading-relaxed">
+                          <div className="mt-3 p-4 bg-gradient-to-br from-purple-950 via-purple-900 to-violet-950 rounded-xl shadow-lg border border-purple-700/50">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Sparkles className="h-3 w-3 text-yellow-400" />
+                              <span className="text-[10px] text-yellow-400 font-black uppercase tracking-wider">SOUL.md</span>
+                            </div>
+                            <div className="max-h-48 overflow-y-auto rounded-lg bg-black/30 p-3">
+                              <pre className="text-[10px] text-purple-200 whitespace-pre-wrap font-mono leading-relaxed">
                                 {agent.personality?.soul || agent.soul}
                               </pre>
                             </div>
-                          </details>
+                          </div>
                         )}
 
                         {agent.identity && (
