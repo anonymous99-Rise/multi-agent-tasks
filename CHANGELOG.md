@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.10.0] - 2026-05-21
+### Added
+- **inbox_processor.sh v3.6.0**: 基于 agency-agents 最佳实践重构
+
+### 模块化架构
+- `init_state()`: 初始化状态文件
+- `retry()`: 重试装饰器 (指数退避)
+- `gh_api()`: GitHub API 调用封装 (带重试)
+- `build_*_response()`: 回复模板函数
+- `has_real_reply()`: 实质性回复检查
+- `process_discussions()`: Discussion 处理
+- `process_issues()`: Issue 处理
+- `main()`: 主流程
+
+### 新增功能
+- 状态追踪 (`state.json`)
+- 活动日志 (`activity.log`)
+- 统计指标 (`replies`/`errors`)
+- 指数退避重试 (2s, 4s, 8s)
+- GitHub API 限流处理
+- 幂等性保证
+
+### Changed
+- inbox_processor.sh v3.5.0 (233行) → v3.6.0 (455行)
+
 ## [3.9.0] - 2026-05-21
 ### Added
 - **agency-agents 最佳实践**: 基于 144+ agents 项目优化 SKILL.md
