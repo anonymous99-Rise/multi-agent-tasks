@@ -48,7 +48,7 @@ $TASKS_PROGRESS
 EOF
 
 # 发到 Discussion
-DISCUSSION_QUERY='mutation($repoId:ID!,$title:String!,$body:String!){createDiscussion(input:{repositoryId:$repoId,title:$title,body:$body,categoryId:"DIC_kwDOSSZwPM4C8Lyk"}){discussion{id}}}'"
+DISCUSSION_QUERY='mutation($repoId:ID!,$title:String!,$body:String!){createDiscussion(input:{repositoryId:$repoId,title:$title,body:$body,categoryId:"DIC_kwDOSSZwPM4C8Lyk"}){discussion{id}}}'
 
 REPO_ID=$(gh api repos "$OWNER/$REPO_NAME" --jq '.node_id')
 

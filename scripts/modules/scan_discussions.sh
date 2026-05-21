@@ -52,7 +52,7 @@ echo "$DISC_DATA" | jq -c "." | while read -r disc; do
   if [ "$HAS_REAL_REPLY" -gt "0" ]; then
     echo "  → 有实质性回复，跳过"
   # 场景2：触发 + 没 ACK → 发 ACK
-  elif [ "$SHOULD_RESPOND" -gt "0" ] && [ "$HAS_ACK" -eq "0" ]; then
+  elif [ "$SHOULD_RESPOND" -gt "0" ] && [ "${HAS_ACK:-0}" -eq "0" ]; then
     echo "  → 触发，无 ACK，发通知"
     gh api graphql -f query='mutation($id:ID!,$body:String!){addDiscussionComment(input:{discussionId:$id,body:$body}){comment{id}}}' \
       -f id="$D_ID" -f body="@${AGENT_SLUG} 收到艾特，我来分析一下，有结果后汇报。" >/dev/null

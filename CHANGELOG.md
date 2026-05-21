@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [6.3.2b] - 2026-05-21
+### Fixed
+- **scan_discussions.sh:55**: 空值比较错误 `HAS_ACK` 修复为 `${HAS_ACK:-0}`
+- **daily_report.sh:61**: JSON 引号匹配问题（多余 `"`）
+
 ## [4.3.0] - 2026-05-21
 ### Changed
 - **scan_issues.sh v6.4.0**: 重大逻辑重构
