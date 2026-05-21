@@ -10,6 +10,13 @@ import path from "path";
 // 心跳文件存储路径
 const AGENTS_PATH = "agents.json";
 
+// SOUL.md 和 IDENTITY.md 路径映射
+const ROLE_SKILL_PATHS = {
+  commander: "skills/task-hub-commander",
+  collector: "skills/task-hub-collector",
+  executor: "skills/task-hub-executor"
+};
+
 const getHeartbeatFile = () => {
   const dataDir = path.join(process.cwd(), "data");
   if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
@@ -30,6 +37,30 @@ const writeHeartbeats = (heartbeats: Record<string, number>) => {
   writeFileSync(getHeartbeatFile(), JSON.stringify(heartbeats, null, 2));
 };
 
+// 读取 SOUL.md 和 IDENTITY.md
+const loadSkillFiles = async (octokit: any, owner: string, repo: string, role: string) => {
+  const skillPath = ROLE_SKILL_PATHS[role as keyof typeof ROLE_SKILL_PATHS];
+  if (!skillPath) return { soul: null, identity: null };
+
+  const result = { soul: null, identity: null };
+
+  try {
+    const { data: soulData }: any = await octokit.rest.repos.getContent({
+      owner, repo, path: `${skillPath}/SOUL.md`
+    });
+    result.soul = Buffer.from(soulData.content, "base64").toString("utf-8");
+  } catch {}
+
+  try {
+    const { data: identityData }: any = await octokit.rest.repos.getContent({
+      owner, repo, path: `${skillPath}/IDENTITY.md`
+    });
+    result.identity = Buffer.from(identityData.content, "base64").toString("utf-8");
+  } catch {}
+
+  return result;
+};
+
 export async function GET() {
   const session: any = await getServerSession(authOptions);
   const token = session?.accessToken || process.env.GITHUB_TOKEN;
@@ -43,15 +74,23 @@ export async function GET() {
       const { data }: any = await octokit.rest.repos.getContent({ owner, repo, path: AGENTS_PATH });
       const content = Buffer.from(data.content, "base64").toString("utf-8");
       const config = JSON.parse(content);
-      
+
       const now = Date.now();
       const heartbeats = readHeartbeats();
-      const sanitizedAgents = (config.agents || []).map((agent: any) => ({
-        ...agent,
-        tgToken: agent.tgToken ? "********" : "",
-        // 5分钟内有心跳视为在线
-        online: heartbeats[agent.name] && (now - heartbeats[agent.name] < 300000)
-      }));
+
+      // 为每个 agent 加载 SOUL.md 和 IDENTITY.md
+      const sanitizedAgents = await Promise.all(
+        (config.agents || []).map(async (agent: any) => {
+          const skillFiles = await loadSkillFiles(octokit, owner, repo, agent.role);
+          return {
+            ...agent,
+            tgToken: agent.tgToken ? "********" : "",
+            online: heartbeats[agent.name] && (now - heartbeats[agent.name] < 300000),
+            soul: skillFiles.soul,
+            identity: skillFiles.identity
+          };
+        })
+      );
 
       return NextResponse.json({ agents: sanitizedAgents });
     } catch (e) {

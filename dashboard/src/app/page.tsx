@@ -707,6 +707,32 @@ export default function Home() {
                             </p>
                           </div>
                         )}
+
+                        {agent.soul && (
+                          <details className="mt-3">
+                            <summary className="text-[10px] text-purple-600 font-black uppercase cursor-pointer hover:text-purple-800">
+                              SOUL.md
+                            </summary>
+                            <div className="mt-2 p-3 bg-purple-50 rounded-lg border border-purple-100 max-h-40 overflow-y-auto">
+                              <pre className="text-[10px] text-purple-800 whitespace-pre-wrap font-mono leading-relaxed">
+                                {agent.soul}
+                              </pre>
+                            </div>
+                          </details>
+                        )}
+
+                        {agent.identity && (
+                          <details className="mt-3">
+                            <summary className="text-[10px] text-green-600 font-black uppercase cursor-pointer hover:text-green-800">
+                              IDENTITY.md
+                            </summary>
+                            <div className="mt-2 p-3 bg-green-50 rounded-lg border border-green-100">
+                              <p className="text-[10px] text-green-800 whitespace-pre-wrap">
+                                {agent.identity}
+                              </p>
+                            </div>
+                          </details>
+                        )}
                       </div>
                     ))
                   )}

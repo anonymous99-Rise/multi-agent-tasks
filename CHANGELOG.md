@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.0.0] - 2026-05-21
+### Added
+- **agency-agents 标准文件结构**: SOUL.md + IDENTITY.md + SKILL.md 三文件分离
+  - `SOUL.md`: 性格定义、沟通风格、学习记忆（基于 agency-agents SOUL.md 格式）
+  - `IDENTITY.md`: 简短身份描述（一句话）
+  - `SKILL.md`: 完整技能定义（v4.0.0）
+- **load_identity.sh v2.0.0**: 支持读取 SOUL.md 和 IDENTITY.md
+- **Dashboard SOUL/IDENTITY 展示**: agents API 加载并展示 SOUL.md 和 IDENTITY.md
+
+### Changed
+- **SKILL.md v4.0.0**: 添加 `## 📚 相关文件` 章节，引用 SOUL.md 和 IDENTITY.md
+- **agents.json**: 无需内嵌完整性格定义，统一从 SOUL.md 读取
+- **README.md**: 更新架构表，添加 agency-agents 文件结构说明
+
+### Files Created
+```
+skills/task-hub-commander/SOUL.md
+skills/task-hub-commander/IDENTITY.md
+skills/task-hub-collector/SOUL.md
+skills/task-hub-collector/IDENTITY.md
+skills/task-hub-executor/SOUL.md
+skills/task-hub-executor/IDENTITY.md
+```
+
 ## [3.10.0] - 2026-05-21
 ### Added
 - **inbox_processor.sh v3.6.0**: 基于 agency-agents 最佳实践重构

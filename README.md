@@ -10,6 +10,34 @@
 | Answer | Collector | 数据翔实、逻辑清晰 | 信息整合、战报生成 | 向小溪汇报 |
 | 太子 | Executor | 务实执行、结果导向 | 执行任务、代码落地 | 向 Answer 汇报 |
 
+### agency-agents 标准文件结构
+
+每个 Agent 有三个标准文件（基于 [agency-agents](https://github.com/msitarzewski/agency-agents) 项目最佳实践）：
+
+```
+skills/
+├── task-hub-commander/
+│   ├── SOUL.md       # 性格定义、沟通风格、学习记忆
+│   ├── IDENTITY.md   # 简短身份描述
+│   └── SKILL.md      # 完整技能定义
+├── task-hub-collector/
+│   ├── SOUL.md
+│   ├── IDENTITY.md
+│   └── SKILL.md
+└── task-hub-executor/
+    ├── SOUL.md
+    ├── IDENTITY.md
+    └── SKILL.md
+```
+
+### 文件说明
+
+| 文件 | 用途 | 说明 |
+|------|------|------|
+| **SOUL.md** | 性格与记忆 | Role、Personality、Memory、Communication Style、Learning |
+| **IDENTITY.md** | 简短身份 | 一句话描述 Agent 是谁 |
+| **SKILL.md** | 完整技能 | Core Mission、Processes、Deliverables、Error Handling |
+
 ## 核心机制
 
 ### 执行链
@@ -36,6 +64,7 @@
 ## 核心功能
 
 - **Personality 性格系统**: 每个 agent 有独特的性格定义（trait/summary/keywords），定义在 SKILL.md，同步到 agents.json，Dashboard 展示
+- **SOUL.md / IDENTITY.md**: agency-agents 标准格式，独立的性格和身份文件
 - **LLM-Driven Inbox**: 去掉 ACK 层，直接 LLM 分析 + 实质性回复
 - **虚拟身份路由**: 将平台特定的提及转换为内部 GitHub 虚拟标签（`@agent/name`）
 - **履约协议**: 确认后必须跟方案，形成"债务"逻辑
@@ -47,7 +76,7 @@
 ```
 ├── scripts/
 │   ├── inbox_processor.sh    # 主入口
-│   ├── load_identity.sh      # 从 agents.json 读取身份
+│   ├── load_identity.sh      # 从 agents.json 读取身份 (v2.0.0)
 │   └── modules/              # 功能模块
 │       ├── quiet_period.sh   # 安静期控制
 │       ├── git_sync.sh       # Git同步
@@ -56,9 +85,13 @@
 │       ├── scan_issues.sh    # Issue扫描
 │       ├── daily_report.sh   # 日报生成（9:00/18:00）
 │       └── update_activity.sh # 状态更新
+├── skills/
+│   ├── task-hub-commander/   # 指挥官 (小溪)
+│   ├── task-hub-collector/   # 汇总者 (Answer)
+│   └── task-hub-executor/    # 执行者 (太子)
 ├── dashboard/               # Next.js Dashboard 应用
 ├── agents.json             # Agent 配置
-└── docs/                    # 文档
+└── docs/                   # 文档
 ```
 
 ## 快速开始
@@ -70,16 +103,24 @@ git clone https://github.com/adminlove520/multi-agent-tasks.git
 cd multi-agent-tasks
 
 # 配置 cron（统一5分钟，由脚本内部控制频率）
-*/5 * * * * cd ~/multi-agent-tasks && bash scripts/inbox_processor.sh "$TOKEN" "answer" >> /tmp/agent_answer.log 2>&1
-*/5 * * * * cd ~/multi-agent-tasks && bash scripts/inbox_processor.sh "$TOKEN" "taizi" >> /tmp/agent_taizi.log 2>&1
+*/5 * * * * cd ~/multi-agent-tasks && bash scripts/inbox_processor.sh "$TOKEN" "skill/xiaoxi" "小溪" "xiaoxi" >> /tmp/agent_xiaoxi.log 2>&1
+*/5 * * * * cd ~/multi-agent-tasks && bash scripts/inbox_processor.sh "$TOKEN" "skill/answer" "Answer" "answer" >> /tmp/agent_answer.log 2>&1
+*/5 * * * * cd ~/multi-agent-tasks && bash scripts/inbox_processor.sh "$TOKEN" "skill/taizi" "太子" "taizi" >> /tmp/agent_taizi.log 2>&1
 ```
 
-### Agent slug 配置
+### Agent 同步
 
-| Agent | slug |
-|-------|------|
-| Answer | `answer` |
-| 太子 | `taizi` |
+```bash
+# 从 SKILL.md 同步 personality 到 agents.json
+./scripts/sync_personality.sh
+
+# 加载身份（读取 SOUL.md、IDENTITY.md）
+source ./scripts/load_identity.sh taizi
+```
+
+## 参考项目
+
+- [agency-agents](https://github.com/msitarzewski/agency-agents) - 144+ AI agents 系统（OpenClaw 集成）
 
 ## License
 MIT
