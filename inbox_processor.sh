@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Multi-Agent Inbox Processor (v3.6.0)
-# agency-agents 最佳实践: 模块化 + 重试逻辑 + 状态追踪 + 决策日志
+# Multi-Agent Inbox Processor (v6.0.0)
+# Agency v6.0: PR support + Context-Aware + Auto-Close + No-ACK Substance
+
 #
 # 支持:
 # - skill/all 强制回复、skill/role 广播、@agent/all
@@ -94,33 +95,100 @@ retry() {
   return 1
 }
 
-# GitHub API 调用（带重试）
+# =============================================
+# 处理 Pull Requests (v6.0 新增)
+# =============================================
+
+process_prs() {
+  log "INFO" "Scanning Pull Requests..."
+
+  local PR_DATA=$(gh pr list --state open --json number,title,body,labels --limit 20 2>/dev/null)
+
+  if [ -z "$PR_DATA" ] || [ "$PR_DATA" = "[]" ]; then
+    log "INFO" "No open PRs found"
+    return
+  fi
+
+  local processed=0
+  local replied=0
+
+  echo "$PR_DATA" | jq -c ".[]" | while read -r pr; do
+    local P_NUM=$(echo "$pr" | jq -r '.number')
+    local P_TITLE=$(echo "$pr" | jq -r '.title')
+    local P_BODY=$(echo "$pr" | jq -r '.body // ""')
+    local P_LABELS=$(echo "$pr" | jq -r '.labels[].name' | tr '\n' ' ')
+
+    processed=$((processed + 1))
+
+    # 获取 PR 详情用于检测
+    local PR_DETAILS=$(gh pr view "$P_NUM" --json comments,author 2>/dev/null)
+    local LAST_COMMENT_AUTHOR=$(echo "$PR_DETAILS" | jq -r '.comments[-1].author.login // "ghost"')
+    
+    # 最后发言人保护
+    if is_last_speaker "$LAST_COMMENT_AUTHOR"; then
+       local TAGGED_IN_BODY=$(echo "$P_TITLE $P_BODY" | grep -i "$VIRTUAL_MENTION" | wc -l)
+       local TAGGED_IN_LAST=$(echo "$PR_DETAILS" | jq -r '.comments[-1].body' | grep -i "$VIRTUAL_MENTION" | wc -l)
+       
+       if [ "$TAGGED_IN_BODY" -eq "0" ] && [ "$TAGGED_IN_LAST" -eq "0" ]; then
+         log "INFO" "I am the last speaker in PR #$P_NUM and no new tag, skipping"
+         continue
+       fi
+    fi
+
+    # 自动关闭逻辑 (v6.0 新增)
+    if [ "$AGENT_SLUG" = "xiaoxi" ]; then
+       local IS_VERIFIED=$(echo "$PR_DETAILS" | jq -r '.comments[].body' | grep -E "\[Answer\].*VERIFIED" | wc -l)
+       if [ "$IS_VERIFIED" -gt "0" ]; then
+         echo "🏁 PR #$P_NUM is VERIFIED. Closing/Merging..."
+         log "INFO" "Closing PR #$P_NUM (Verified by Answer)"
+         gh_api pr_comment "$P_NUM" --body "[小溪]: 经 @agent/answer 验证通过，准予合并/关闭。"
+         gh_api pr_close "$P_NUM"
+         continue
+       fi
+    fi
+
+    # 逻辑同 Issue，但侧重于 Review
+    local IS_TAGGED=$(echo "$P_TITLE $P_BODY $PR_DETAILS" | grep -i "$VIRTUAL_MENTION" | wc -l)
+    
+    if [ "$IS_TAGGED" -gt "0" ] || echo "$P_LABELS" | grep -q "$MY_ROLE_LABEL"; then
+       # 检查是否已回复
+       local OWN_COMMENTS=$(echo "$PR_DETAILS" | jq -r ".comments[] | select(.body | contains(\"[$AGENT_NAME]\")) | .body" 2>/dev/null)
+       if has_real_reply "$OWN_COMMENTS" "$AGENT_NAME"; then
+         log "INFO" "PR #$P_NUM already has reply, skipping"
+         continue
+       fi
+
+       echo "------------------------------------------------"
+       echo "🔀 PR #$P_NUM: $P_TITLE"
+       local CONTEXT=$(echo "$PR_DETAILS" | jq -r '.comments[-5:].body // ""')
+       local RESPONSE_BODY=$(build_direct_response "$P_TITLE" "$CONTEXT")
+       
+       if gh_api pr_comment "$P_NUM" --body "$RESPONSE_BODY"; then
+         log "INFO" "Replied to PR #$P_NUM"
+         replied=$((replied + 1))
+       fi
+    fi
+  done
+}
+
+# 辅助函数扩展
 gh_api() {
   local cmd="$1"
   shift
 
   case "$cmd" in
-    discussion_comment)
-      retry gh discussion comment "$@"
-      ;;
-    issue_comment)
-      retry gh issue comment "$@"
-      ;;
-    issue_edit)
-      retry gh issue edit "$@"
-      ;;
-    issue_view)
-      retry gh issue view "$@"
-      ;;
-    api)
-      retry gh api "$@"
-      ;;
-    *)
-      log "ERROR" "Unknown gh_api command: $cmd"
-      return 1
-      ;;
+    discussion_comment) retry gh discussion comment "$@";;
+    issue_comment) retry gh issue comment "$@";;
+    issue_edit) retry gh issue edit "$@";;
+    issue_view) retry gh issue view "$@";;
+    pr_comment) retry gh pr comment "$@";;
+    pr_close) retry gh pr close "$@";;
+    issue_close) retry gh issue close "$@";;
+    api) retry gh api "$@";;
+    *) log "ERROR" "Unknown gh_api command: $cmd"; return 1;;
   esac
 }
+
 
 # =============================================
 # 初始化
@@ -468,7 +536,21 @@ process_issues() {
     local HAS_MY_ROLE=$(echo "$I_LABELS" | grep -i "$MY_ROLE_LABEL" | wc -l)
     local HAS_MY_LABEL=$(echo "$I_LABELS" | grep -i "$IDENTITY_LABEL" | wc -l)
 
+    # 5. 自动关闭逻辑 (v6.0 新增)
+    # 只有 Agency Lead (xiaoxi) 有权在 Answer 验证后关闭任务
+    if [ "$AGENT_SLUG" = "xiaoxi" ]; then
+       local IS_VERIFIED=$(echo "$ISSUE_DETAILS" | jq -r '.comments[].body' | grep -E "\[Answer\].*VERIFIED" | wc -l)
+       if [ "$IS_VERIFIED" -gt "0" ]; then
+         echo "🏁 Task #$I_NUM is VERIFIED. Closing..."
+         log "INFO" "Closing Issue #$I_NUM (Verified by Answer)"
+         gh_api issue_comment "$I_NUM" --body "[小溪]: 经 @agent/answer 验证通过，现正式关闭此任务。Good job team."
+         gh_api issue_close "$I_NUM"
+         continue
+       fi
+    fi
+
     # 过滤：只处理 skill/all 或我的 role 标签
+
     if [ "$HAS_SKILL_ALL" -eq "0" ] && [ "$HAS_MY_ROLE" -eq "0" ]; then
       continue
     fi
@@ -529,7 +611,10 @@ main() {
   echo ""
   process_issues
   echo ""
+  process_prs
+  echo ""
   echo "===================================================="
+
   echo "✅ Scan complete. Stats: $(cat "$STATE_FILE" | jq '.stats')"
   log "INFO" "Run complete. Stats: $(jq -r '.stats' "$STATE_FILE")"
 }

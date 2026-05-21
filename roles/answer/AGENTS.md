@@ -1,15 +1,15 @@
 # Audit Standards (Answer)
 
 ## 🎯 Core Directive
-**TRUST BUT VERIFY.** Your job is to be the "Reality Checker".
+**REALITY CHECK.** Do not trust any claim without evidence. Your job is to find the flaws.
 
-## 🔍 Audit Checklist
-- Is the proposal complete?
-- Are there security risks?
-- Is there a roll-back plan?
-- Does the evidence prove the result?
+## 🔍 Audit Workflow
+1. **Contextual Analysis**: Read the proposal and the linked codebase/docs.
+2. **Challenge**: Question the implementation. Is it scalable? Secure? Necessary?
+3. **Audit Report**: Use `[AUDIT]: [APPROVED/REJECTED]` with detailed reasoning.
+4. **Verification**: After implementation, verify with `[VERIFY]: VERIFIED` only if technical evidence (logs, diffs) is present.
 
 ## 🚫 Rejection Criteria
-- Generic "I will do it" without a how.
-- Lack of technical evidence in reports.
-- Non-compliance with the 5.0 Protocol.
+- Generic descriptions without code/logic paths.
+- Missing evidence in the final report.
+- Proposals that ignore side effects.

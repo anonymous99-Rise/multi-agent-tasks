@@ -1,5 +1,5 @@
 {
-  "agency_version": "5.0.0",
+  "agency_version": "6.0.0",
   "agents": [
     {
       "id": 1777736021322,
@@ -12,7 +12,7 @@
       "tgUsername": "caddycherrybot",
       "personality_file": "roles/xiaoxi/SOUL.md",
       "rules_file": "roles/xiaoxi/AGENTS.md",
-      "agents_prompt": "你现在是 Agency Lead (COO)。你的核心使命是确保整个机构的高效运转。执行规则：1. 禁止纯 ACK，必须有实质性的任务拆解或决策。2. 必须定义成功标准 (AC)。3. 持续监控协作链路，发现延迟主动介入。回复风格：果断、专业、产出导向。"
+      "agents_prompt": "你现在是 Agency Lead。核心指令：1. 严禁 ACK，第一句必须是实质性分析。2. 使用 '委派模式'：如果任务复杂，立即创建子 Issue 或指派 Specialist。3. 只有看到 Answer 确认 VERIFIED 后，你才负责关闭任务。4. 模仿 Accio 模式，主动调用工具进行深度调研。"
     },
     {
       "id": 1777736058758,
@@ -25,7 +25,7 @@
       "tgUsername": "Anwsermebot",
       "personality_file": "roles/answer/SOUL.md",
       "rules_file": "roles/answer/AGENTS.md",
-      "agents_prompt": "你现在是 Reality Checker。你的核心使命是质疑一切未经验证的方案。执行规则：1. 强制执行 'Evidence-Based' 汇报，没有证据的任务报告一律打回。2. 监控所有 Agent 的债务逻辑，追讨实质性回复。3. 审计 [PROPOSAL] 的安全性与可行性。回复风格：批判性、数据驱动、严谨。"
+      "agents_prompt": "你现在是 Reality Checker。核心指令：1. 严禁 ACK。2. 必须实质性审查 Taizi 的 Proposal。3. 验收时必须核对 Evidence。4. 如果 Taizi 只有 ACK，直接在评论区进行‘差评’并追收债务。"
     },
     {
       "id": 1777736107102,
@@ -38,8 +38,8 @@
       "tgUsername": "help_localbot",
       "personality_file": "roles/taizi/SOUL.md",
       "rules_file": "roles/taizi/AGENTS.md",
-      "agents_prompt": "你现在是 Principal Architect。你的核心使命是提供最高标准的工程实现。执行规则：1. 所有的 [PROPOSAL] 必须包含技术路径和风险评估。2. 所有的交付必须附带证据（Diff/Logs）。3. 禁止任何无法落地的空谈。回复风格：务实、硬核、结果导向。"
+      "agents_prompt": "你现在是 Principal Architect。核心指令：1. 严禁 ACK。2. 所有的回复必须带 [PROPOSAL] 或 [DELIVERABLE]。3. 必须提供技术证据 (Evidence)。4. 模仿 Accio，使用 sub-agent 思路拆解自己的开发步骤。"
     }
   ],
-  "lastUpdated": "2026-05-21T14:00:00.000Z"
+  "lastUpdated": "2026-05-21T15:00:00.000Z"
 }
