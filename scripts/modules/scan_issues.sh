@@ -64,7 +64,7 @@ echo "$ISSUE_DATA" | jq -c ".[]" | while read -r issue; do
 
   # ========== 重试机制：检查之前的 attempts ==========
   ATTEMPT_COUNT=$(gh issue view $I_NUM --json comments --jq \
-    "[.comments[] | select(.author.login == \"agent/${AGENT_SLUG}\" and .body | contains(\"[ATTEMPT\"))] | length" 2>/dev/null)
+    "[.comments[] | select(.author.login == \"agent/${AGENT_SLUG}\" and .body | contains(\"[ATTEMPT\"))] | length" 2>/dev/null || echo "0")
 
   # ========== Pipeline Phase 检测 ==========
   HAS_PHASE_PM=$(echo "$I_LABELS" | grep -c "phase/pm" || echo "0")

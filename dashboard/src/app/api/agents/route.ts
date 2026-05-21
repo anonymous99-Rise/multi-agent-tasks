@@ -11,10 +11,11 @@ import path from "path";
 const AGENTS_PATH = "agents.json";
 
 // SOUL.md 和 IDENTITY.md 路径映射
-const ROLE_SKILL_PATHS = {
-  commander: "skills/task-hub-commander",
-  collector: "skills/task-hub-collector",
-  executor: "skills/task-hub-executor"
+// role → skill 目录映射（与 agents.json.role 字段对应）
+const ROLE_SKILL_PATHS: Record<string, string> = {
+  commander: "skills/task-hub-creator",   // 小溪 → task-hub-creator
+  collector: "skills/task-hub-collector", // Answer → task-hub-collector
+  executor:  "skills/task-hub-executor"    // 太子 → task-hub-executor
 };
 
 const getHeartbeatFile = () => {
@@ -110,6 +111,76 @@ export async function POST(req: Request) {
     heartbeats[payload.name] = Date.now();
     writeHeartbeats(heartbeats);
     return NextResponse.json({ success: true, timestamp: heartbeats[payload.name] });
+  }
+
+  // 处理 personality 从 SKILL.md 同步 (通过 GitHub API 读取，commit 更新 agents.json)
+  if (payload.action === "sync_personality") {
+    const session: any = await getServerSession(authOptions);
+    const token = session?.accessToken || process.env.GITHUB_TOKEN;
+    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const octokit = new Octokit({ auth: token });
+    const { owner, repo } = await getRepoInfo(octokit);
+
+    // role → skill path 映射
+    const roleSkillPaths: Record<string, string> = {
+      commander: "skills/task-hub-creator/SKILL.md",
+      collector: "skills/task-hub-collector/SKILL.md",
+      executor:  "skills/task-hub-executor/SKILL.md"
+    };
+
+    // 读取 agents.json
+    let agentsSha: string | undefined;
+    let agentsContent: any;
+    try {
+      const { data }: any = await octokit.rest.repos.getContent({ owner, repo, path: AGENTS_PATH });
+      agentsSha = data.sha;
+      agentsContent = JSON.parse(Buffer.from(data.content, "base64").toString("utf-8"));
+    } catch (e) {
+      return NextResponse.json({ success: false, error: "Cannot read agents.json" });
+    }
+
+    // 从 SKILL.md 解析 personality 并更新对应 agent
+    for (const agent of agentsContent.agents || []) {
+      const skillPath = roleSkillPaths[agent.role];
+      if (!skillPath) continue;
+
+      try {
+        const { data }: any = await octokit.rest.repos.getContent({ owner, repo, path: skillPath });
+        const skillContent = Buffer.from(data.content, "base64").toString("utf-8");
+
+        // 解析 personality 字段
+        const traitMatch = skillContent.match(/\*\*Trait\*\*:\s*(.+?)(?:\n|$)/);
+        const summaryMatch = skillContent.match(/\*\*Summary\*\*:\s*(.+?)(?:\n|$)/);
+        const keywordsMatch = skillContent.match(/\*\*Keywords\*\*:\s*(.+?)(?:\n|$)/);
+        const soulMatch = skillContent.match(/## 🎭 Persona\n([\s\S]+?)(?=\n##|\n---\n|$)/);
+
+        agent.personality = {
+          trait: traitMatch ? traitMatch[1].replace(/\(.+\)/, "").trim() : agent.personality?.trait || "",
+          summary: summaryMatch ? summaryMatch[1].trim() : agent.personality?.summary || "",
+          keywords: keywordsMatch
+            ? keywordsMatch[1].split("、").map((k: string) => k.trim()).filter(Boolean)
+            : agent.personality?.keywords || [],
+          soul: soulMatch ? soulMatch[1].trim() : agent.personality?.soul || ""
+        };
+      } catch {
+        // SKILL.md 不存在则跳过
+      }
+    }
+
+    // 提交更新
+    agentsContent.lastUpdated = new Date().toISOString();
+    try {
+      await octokit.rest.repos.createOrUpdateFileContents({
+        owner, repo, path: AGENTS_PATH,
+        message: "🔄 sync: Update personality from SKILL.md",
+        content: Buffer.from(JSON.stringify(agentsContent, null, 2)).toString("base64"),
+        sha: agentsSha,
+      });
+      return NextResponse.json({ success: true, message: "Personality synced from SKILL.md via GitHub API" });
+    } catch (e: any) {
+      return NextResponse.json({ success: false, error: e.message });
+    }
   }
 
   const session: any = await getServerSession(authOptions);

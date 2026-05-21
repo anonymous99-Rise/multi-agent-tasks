@@ -594,12 +594,36 @@ export default function Home() {
                     <h2 className="text-2xl font-black text-gray-900 tracking-tight">{t.agents.title}</h2>
                     <p className="text-sm text-gray-500 font-medium mt-1">{t.agents.desc}</p>
                   </div>
-                  <button 
-                    onClick={handleAddAgent}
-                    className="flex items-center gap-2 bg-blue-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-all"
-                  >
-                    <Plus className="h-4 w-4" /> {t.agents.add}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={async () => {
+                        if (!confirm("从 SKILL.md 同步 personality 到 agents.json？")) return;
+                        try {
+                          const res = await fetch("/api/agents", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ action: "sync_personality" }),
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            alert("✅ Personality 已从 SKILL.md 同步");
+                            fetchAgents();
+                          } else {
+                            alert("❌ 同步失败: " + data.error);
+                          }
+                        } catch (e: any) { alert("❌ " + e.message); }
+                      }}
+                      className="flex items-center gap-2 bg-purple-600 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 text-sm"
+                    >
+                      <Terminal className="h-4 w-4" /> 从 SKILL.md 同步
+                    </button>
+                    <button
+                      onClick={handleAddAgent}
+                      className="flex items-center gap-2 bg-blue-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-all"
+                    >
+                      <Plus className="h-4 w-4" /> {t.agents.add}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
@@ -644,10 +668,20 @@ export default function Home() {
                         
                         {agent.personality && (
                           <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
                               <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-black rounded-full uppercase">
                                 {agent.personality.trait || agent.role}
                               </span>
+                              {agent.framework === "hermes" && (
+                                <span className="px-1.5 py-0.5 bg-purple-100 text-purple-600 text-[10px] font-bold rounded border border-purple-200">
+                                  Hermes
+                                </span>
+                              )}
+                              {agent.framework === "openclaw" && (
+                                <span className="px-1.5 py-0.5 bg-orange-100 text-orange-600 text-[10px] font-bold rounded border border-orange-200">
+                                  OpenClaw
+                                </span>
+                              )}
                             </div>
                             <p className="text-xs text-gray-600 leading-relaxed mb-2">
                               {agent.personality.summary || 'No description'}
@@ -658,6 +692,12 @@ export default function Home() {
                                   {kw}
                                 </span>
                               ))}
+                            </div>
+                            <div className="mt-2 flex items-center gap-1">
+                              <span className="text-[9px] text-gray-400 font-medium">来源:</span>
+                              <code className="text-[9px] text-purple-600 font-mono bg-purple-50 px-1 rounded">
+                                {agent.role === "commander" ? "skills/task-hub-creator" : agent.role === "collector" ? "skills/task-hub-collector" : "skills/task-hub-executor"}/SKILL.md
+                              </code>
                             </div>
                           </div>
                         )}
