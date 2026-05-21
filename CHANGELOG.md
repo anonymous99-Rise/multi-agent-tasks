@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.1.0] - 2026-05-21
+### Added
+- **init_env.sh**: 跨平台路径自动检测与初始化脚本
+  - 自动检测框架 (openclaw/hermes)
+  - 自动检测操作系统 (Linux/macOS/Windows)
+  - 不存在时自动 clone
+  - 存在时自动 git pull
+
+### Changed
+- **README.md**: 更新为使用 init_env.sh 的方式
+- **路径规范**: 明确各平台的路径约定
+
+### 路径规范
+| 框架 | Linux/macOS | Windows |
+|------|-------------|---------|
+| OpenClaw | `~/.openclaw/workspace/multi-agent-tasks` | `%USERPROFILE%/.openclaw/workspace/multi-agent-tasks` |
+| Hermes | `~/.hermes/skills/multi-agent-tasks` | `%USERPROFILE%/.hermes/skills/multi-agent-tasks` |
+
 ## [4.0.0] - 2026-05-21
 ### Added
 - **agency-agents 标准文件结构**: SOUL.md + IDENTITY.md + SKILL.md 三文件分离

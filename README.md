@@ -96,17 +96,33 @@ skills/
 
 ## 快速开始
 
+### 环境初始化
+
+```bash
+# 自动检测框架并初始化（推荐）
+source scripts/init_env.sh
+
+# 或手动指定框架
+source scripts/init_env.sh openclaw   # OpenClaw 环境
+source scripts/init_env.sh hermes    # Hermes 环境
+```
+
 ### Agent 部署
 
 ```bash
-git clone https://github.com/adminlove520/multi-agent-tasks.git
-cd multi-agent-tasks
+# 使用 init_env.sh 初始化后，运行
+cd $MAT_ROOT && bash scripts/inbox_processor.sh
 
-# 配置 cron（统一5分钟，由脚本内部控制频率）
-*/5 * * * * cd ~/multi-agent-tasks && bash scripts/inbox_processor.sh "$TOKEN" "skill/xiaoxi" "小溪" "xiaoxi" >> /tmp/agent_xiaoxi.log 2>&1
-*/5 * * * * cd ~/multi-agent-tasks && bash scripts/inbox_processor.sh "$TOKEN" "skill/answer" "Answer" "answer" >> /tmp/agent_answer.log 2>&1
-*/5 * * * * cd ~/multi-agent-tasks && bash scripts/inbox_processor.sh "$TOKEN" "skill/taizi" "太子" "taizi" >> /tmp/agent_taizi.log 2>&1
+# cron 配置示例（使用 init_env.sh 自动处理路径）
+*/5 * * * * source ~/path/to/init_env.sh openclaw && cd $MAT_ROOT && bash scripts/inbox_processor.sh "$AGENT_TOKEN" "skill/taizi" "太子" "taizi" >> /tmp/agent_taizi.log 2>&1
 ```
+
+### 路径规范
+
+| 框架 | Linux/macOS | Windows |
+|------|-------------|---------|
+| OpenClaw | `~/.openclaw/workspace/multi-agent-tasks` | `%USERPROFILE%/.openclaw/workspace/multi-agent-tasks` |
+| Hermes | `~/.hermes/skills/multi-agent-tasks` | `%USERPROFILE%/.hermes/skills/multi-agent-tasks` |
 
 ### Agent 同步
 
