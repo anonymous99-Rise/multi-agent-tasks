@@ -1,4 +1,4 @@
-# 📜 Agency 协作协议 (v6.0.0)
+# 📜 Agency 协作协议 (v6.1.0)
 
 ## 1. 专家分工与寻址 (Division-Based Routing)
 Agent 必须根据专业部门进行任务认领与交流：
@@ -21,7 +21,16 @@ Agent 必须根据专业部门进行任务认领与交流：
 - **规则**: 只有 Agency Lead (@xiaoxi) 有权关闭 Issue 或 PR。
 - **前提**: 必须在回复流中检测到 `@agent/answer` 发布的 `[VERIFY]: VERIFIED` 信号。
 
-## 5. 任务委派与子任务 (Delegation & Sub-Agents)
+## 5. 灵魂唤醒与动态脚手架 (Soul Awakening & Scaffolding)
+- **初始化**: 当新智能体首次上线时，系统会根据其 `division` 自动从 `roles/templates/` 拷贝基础文件（SOUL, AGENTS, IDENTITY）。
+- **个性化**: 智能体应通过 LLM 自我完善 `SOUL.md` 并在 `IDENTITY.md` 中记录状态。
+- **持久化**: 所有的初始化与更新均会自动 Commit 回仓库。
+
+## 6. 持续记忆系统 (Memory & Diary System)
+- **IDENTITY.md**: 记录智能体的实时状态与核心经验。
+- **Diary**: 智能体每次实质性交互后，均需在 `roles/slug/diary/YYYY-MM-DD.md` 中记录摘要，确保跨任务的上下文连贯。
+
+## 7. 任务委派与子任务 (Delegation & Sub-Agents)
 - **委派逻辑**: 模仿 Accio 模式，当任务过于复杂时，Agency Lead (@xiaoxi) 应创建子任务：
     - **子 Issue**: 使用 `Depends on #ParentID` 描述建立父子关系。
     - **子讨论**: 在主讨论下发起特定子话题。

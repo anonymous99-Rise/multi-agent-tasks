@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Multi-Agent Inbox Processor (v6.0.0)
-# Agency v6.0: PR support + Context-Aware + Auto-Close + No-ACK Substance
+# Multi-Agent Inbox Processor (v6.1.0)
+# Agency v6.1: Soul Awakening + Scaffolding + Diary System
 
 #
 # 支持:
@@ -62,6 +62,53 @@ init_state() {
     echo '{"last_run": "", "processed": {}, "stats": {"replies": 0, "errors": 0}}' > "$STATE_FILE"
   fi
 }
+
+init_role_if_missing() {
+  local role_dir="roles/$AGENT_SLUG"
+  if [ ! -d "$role_dir" ]; then
+    log "INFO" "Soul Awakening: Initializing role scaffolding for $AGENT_NAME ($AGENT_SLUG)..."
+    
+    # 自动识别部门 (Division)
+    local division="engineering" # 默认
+    if [[ "$MY_ROLE_LABEL" == *"management"* ]] || [[ "$MY_ROLE_LABEL" == *"commander"* ]]; then
+      division="management"
+    elif [[ "$MY_ROLE_LABEL" == *"qa_audit"* ]] || [[ "$MY_ROLE_LABEL" == *"collector"* ]] || [[ "$MY_ROLE_LABEL" == *"reality_checker"* ]]; then
+      division="qa_audit"
+    fi
+
+    mkdir -p "$role_dir/diary"
+    
+    # 从模板拷贝
+    local template_dir="roles/templates/$division"
+    [ ! -d "$template_dir" ] && template_dir="roles/templates/engineering" # Fallback
+    
+    cp "$template_dir/SOUL.md" "$role_dir/SOUL.md"
+    cp "$template_dir/AGENTS.md" "$role_dir/AGENTS.md"
+    cp "roles/templates/IDENTITY.md" "$role_dir/IDENTITY.md"
+    
+    # 填充变量
+    sed -i "s/{{AGENT_NAME}}/$AGENT_NAME/g" "$role_dir/SOUL.md"
+    sed -i "s/{{AGENT_NAME}}/$AGENT_NAME/g" "$role_dir/IDENTITY.md"
+    
+    log "INFO" "Scaffolding complete. Committing to repository..."
+    git add "$role_dir"
+    git commit -m "chore: soul awakening for $AGENT_NAME ($AGENT_SLUG)"
+    git push origin main
+  fi
+}
+
+log_diary() {
+  local entry="$1"
+  local diary_dir="roles/$AGENT_SLUG/diary"
+  [ ! -d "roles/$AGENT_SLUG" ] && return # 还没初始化
+  mkdir -p "$diary_dir"
+  local diary_file="$diary_dir/$(date +%Y-%m-%d).md"
+  if [ ! -f "$diary_file" ]; then
+    echo "# Diary - $AGENT_NAME ($(date +%Y-%m-%d))" > "$diary_file"
+  fi
+  echo "- [$(date +%H:%M:%S)] $entry" >> "$diary_file"
+}
+
 
 update_stats() {
   local field=$1
@@ -165,6 +212,7 @@ process_prs() {
        
        if gh_api pr_comment "$P_NUM" --body "$RESPONSE_BODY"; then
          log "INFO" "Replied to PR #$P_NUM"
+         log_diary "Replied to PR #$P_NUM"
          replied=$((replied + 1))
        fi
     fi
@@ -206,8 +254,10 @@ OWNER=$(echo "$REPO_FULL" | cut -d'/' -f1)
 REPO_NAME=$(echo "$REPO_FULL" | cut -d'/' -f2)
 
 init_state
+init_role_if_missing
 
 echo "===================================================="
+
 echo "🤖 Agent: $AGENT_NAME ($AGENT_SLUG) | Role: $MY_ROLE"
 echo "📦 Repo: $OWNER/$REPO_NAME"
 echo "⏰ Time: $(date '+%Y-%m-%d %H:%M:%S')"
@@ -478,7 +528,9 @@ process_discussions() {
 
       if gh_api discussion_comment "$D_NUM" --body "$RESPONSE_BODY"; then
         log "INFO" "Replied to Discussion #$D_NUM"
+        log_diary "Replied to Discussion #$D_NUM ($REASON)"
         replied=$((replied + 1))
+
         update_stats "replies"
       else
         log "ERROR" "Failed to reply to Discussion #$D_NUM"
@@ -571,11 +623,13 @@ process_issues() {
       local CONTEXT=$(echo "$ISSUE_DETAILS" | jq -r '.comments[-3:].body // ""')
       local RESPONSE_BODY=$(build_broadcast_response "$I_TITLE" "$CONTEXT")
 
-      if gh_api issue_comment "$I_NUM" --body "$RESPONSE_BODY"; then
+          if gh_api issue_comment "$I_NUM" --body "$RESPONSE_BODY"; then
+            log "INFO" "Replied to direct mention in Issue #$I_NUM"
+            log_diary "Replied to direct mention in Issue #$I_NUM"
+            replied=$((replied + 1))
+            update_stats "replies"
+          fi
 
-        replied=$((replied + 1))
-        update_stats "replies"
-      fi
 
     elif [ "$HAS_MY_ROLE" -gt "0" ] && [ "$HAS_MY_LABEL" -eq "0" ]; then
       # 尝试认领任务（原子锁）
@@ -587,11 +641,31 @@ process_issues() {
 
         if gh_api issue_edit "$I_NUM" --add-label "task/processing,$IDENTITY_LABEL" --remove-label "task"; then
           local RESPONSE_BODY=$(build_claim_response "$I_TITLE")
-          if gh_api issue_comment "$I_NUM" --body "$RESPONSE_BODY"; then
-            claimed=$((claimed + 1))
-            replied=$((replied + 1))
-            update_stats "replies"
-          fi
+      if gh_api issue_comment "$I_NUM" --body "$RESPONSE_BODY"; then
+        log "INFO" "Replied to Issue #$I_NUM"
+        log_diary "Replied to Issue #$I_NUM ($REASON)"
+        replied=$((replied + 1))
+        update_stats "replies"
+      else
+        log "ERROR" "Failed to reply to Issue #$I_NUM"
+        update_stats "errors"
+      fi
+    fi
+
+    # 4. 角色专属任务锁定
+    if echo "$I_LABELS" | grep -q "$MY_ROLE_LABEL"; then
+       # 检查是否已锁定
+       local IS_LOCKED=$(echo "$I_LABELS" | grep -E "task/processing|agent/" | wc -l)
+       if [ "$IS_LOCKED" -lt "2" ]; then
+         echo "🔒 Claiming private task #$I_NUM..."
+         log "INFO" "Claiming Issue #$I_NUM"
+         log_diary "Claimed Task #$I_NUM"
+         local CLAIM_BODY=$(build_claim_response "$I_TITLE")
+         gh_api issue_edit "$I_NUM" --add-label "task/processing,$IDENTITY_LABEL" --remove-label "task"
+         gh_api issue_comment "$I_NUM" --body "$CLAIM_BODY"
+       fi
+    fi
+
         fi
       else
         log "INFO" "Issue #$I_NUM is locked by another agent, skipping"
@@ -606,6 +680,19 @@ process_issues() {
 # 主流程
 # =============================================
 
+final_push() {
+  local role_dir="roles/$AGENT_SLUG"
+  if [ -d "$role_dir" ]; then
+    # 检查是否有改动
+    if git status --porcelain "$role_dir" | grep -q .; then
+      log "INFO" "Persisting memory and diary to repository..."
+      git add "$role_dir"
+      git commit -m "chore: update memory/diary for $AGENT_NAME ($(date +%Y-%m-%d))"
+      git push origin main
+    fi
+  fi
+}
+
 main() {
   process_discussions
   echo ""
@@ -613,6 +700,7 @@ main() {
   echo ""
   process_prs
   echo ""
+  final_push
   echo "===================================================="
 
   echo "✅ Scan complete. Stats: $(cat "$STATE_FILE" | jq '.stats')"

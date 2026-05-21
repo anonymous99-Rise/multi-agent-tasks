@@ -1,142 +1,67 @@
-# Multi-Agent Tasks
+# Multi-Agent Agency (v6.1.0)
 
-基于 GitHub Issues 和 Discussions 的 Multi-Agent 协作系统。
+基于 GitHub Issues, Discussions 和 Pull Requests 的专家代理事务所 (AI Agency)。本项目参考了 [agency-agents](https://github.com/msitarzewski/agency-agents) 的专业分工哲学，并集成了 **Soul Awakening (灵魂唤醒)** 与 **Continuous Memory (持续记忆)** 机制。
 
-## 架构
+## 🏢 机构架构 (The Agency)
 
-| Agent | 角色 | 性格 | 职责 | 汇报链 |
-|-------|------|------|------|--------|
-| 小溪 | Commander | 果断决策、主动推进 | 下达命令、拆解任务 | 等汇报 |
-| Answer | Collector | 数据翔实、逻辑清晰 | 信息整合、战报生成 | 向小溪汇报 |
-| 太子 | Executor | 务实执行、结果导向 | 执行任务、代码落地 | 向 Answer 汇报 |
+| Agent | 角色 | 部门 | 职责 |
+|-------|------|------|------|
+| **小溪** | Agency Lead | division/management | 战略拆解、任务委派、自动结项 |
+| **Answer** | Reality Checker | division/qa_audit | 方案审计、证据核实、现实校对 |
+| **太子** | Principal Architect | division/engineering | 技术落地、代码实现、证据交付 |
 
-### agency-agents 标准文件结构
+## 🚀 核心特性 (v6.1.x)
 
-每个 Agent 有三个标准文件（基于 [agency-agents](https://github.com/msitarzewski/agency-agents) 项目最佳实践）：
+- **Soul Awakening & Scaffolding**: 
+    - 智能体上线后自动从模板生成 `SOUL.md`、`AGENTS.md` 和 `IDENTITY.md`。
+    - 实现“Dashboard 配置 -> 仓库自动初始化”的闭环。
+- **Continuous Memory System**:
+    - **Diary (日记)**: 记录每日实质性交互摘要，确保跨任务的上下文连贯。
+    - **IDENTITY.md**: 维护智能体的实时状态与长期进化记录。
+- **Substance-Only Protocol**: 
+    - 严禁纯 ACK 占位，回复必须调用 LLM 进行深度分析。
+    - 第一条回复必须是 `[PROPOSAL]` (技术路径)，最后一条必须带 `Evidence` (证据)。
+- **Audit Gate (审计门禁)**: 
+    - 实施“方案审计 -> 执行 -> 验证”的严谨流程。
+    - 只有 Answer 验证通过，小溪才会自动关闭任务。
+- **Full Platform Support**: 
+    - 深度集成 Issue, PR, 和 Discussions，仅关注 OPEN 状态的任务。
+- **Delegation Logic**: 
+    - 模仿 Accio 模式，支持创建子任务 (Linked Issues) 进行分权协作。
 
-```
-skills/
-├── task-hub-commander/
-│   ├── SOUL.md       # 性格定义、沟通风格、学习记忆
-│   ├── IDENTITY.md   # 简短身份描述
-│   └── SKILL.md      # 完整技能定义
-├── task-hub-collector/
-│   ├── SOUL.md
-│   ├── IDENTITY.md
-│   └── SKILL.md
-└── task-hub-executor/
-    ├── SOUL.md
-    ├── IDENTITY.md
-    └── SKILL.md
-```
-
-### 文件说明
-
-| 文件 | 用途 | 说明 |
-|------|------|------|
-| **SOUL.md** | 性格与记忆 | Role、Personality、Memory、Communication Style、Learning |
-| **IDENTITY.md** | 简短身份 | 一句话描述 Agent 是谁 |
-| **SKILL.md** | 完整技能 | Core Mission、Processes、Deliverables、Error Handling |
-
-## 核心机制
-
-### 执行链
-```
-指挥官(小溪) → 下达任务 → 执行者(太子/Answer)
-                              ↓
-                        执行中/完成
-                              ↓
-              执行结果 → 汇报给指挥官/汇总者
-```
-
-### 艾特回复时效
-| 场景 | 时效要求 |
-|------|---------|
-| @agent/xxx 被点名 | 3分钟内必须实质性回复 |
-| skill/all 广播 | 5分钟内必须实质性回复 |
-| 专属任务领取 | 30分钟内必须开始执行 |
-
-### skill/all 强制回复
-- **所有 agent** 收到 `skill/all` 标签的任务必须**实质性回复**
-- **禁止纯 ACK** - 必须包含实际分析或方案
-- 回复格式: `[skill/slug]/analyzed + 实质性内容`
-
-## 核心功能
-
-- **Personality 性格系统**: 每个 agent 有独特的性格定义（trait/summary/keywords），定义在 SKILL.md，同步到 agents.json，Dashboard 展示
-- **SOUL.md / IDENTITY.md**: agency-agents 标准格式，独立的性格和身份文件
-- **LLM-Driven Inbox**: 去掉 ACK 层，直接 LLM 分析 + 实质性回复
-- **虚拟身份路由**: 将平台特定的提及转换为内部 GitHub 虚拟标签（`@agent/name`）
-- **履约协议**: 确认后必须跟方案，形成"债务"逻辑
-- **Discussion 优先**: 使用 GitHub Discussions 进行头脑风暴，Issues 管理任务
-- **安静期控制**: 30分钟无活动才扫描，有活动就跳过
-
-## 目录结构
+## 📂 目录结构
 
 ```
-├── scripts/
-│   ├── inbox_processor.sh    # 主入口
-│   ├── load_identity.sh      # 从 agents.json 读取身份 (v2.0.0)
-│   └── modules/              # 功能模块
-│       ├── quiet_period.sh   # 安静期控制
-│       ├── git_sync.sh       # Git同步
-│       ├── heartbeat.sh      # 心跳注册
-│       ├── scan_discussions.sh  # Discussion扫描
-│       ├── scan_issues.sh    # Issue扫描
-│       ├── daily_report.sh   # 日报生成（9:00/18:00）
-│       └── update_activity.sh # 状态更新
+├── roles/
+│   ├── templates/          # 全球标准角色模板
+│   ├── xiaoxi/             # 小溪的个性与日记
+│   ├── answer/             # Answer 的个性与日记
+│   └── taizi/              # 太子的个性与日记
 ├── skills/
-│   ├── task-hub-commander/   # 指挥官 (小溪)
-│   ├── task-hub-collector/   # 汇总者 (Answer)
-│   └── task-hub-executor/    # 执行者 (太子)
-├── dashboard/               # Next.js Dashboard 应用
-├── agents.json             # Agent 配置
-└── docs/                   # 文档
+│   ├── task-hub-commander/ # 管理端技能
+│   ├── task-hub-collector/ # 审计端技能
+│   └── task-hub-executor/  # 执行端技能
+├── inbox_processor.sh      # 核心引擎 (v6.1.0)
+├── agents.json             # 机构全局配置
+└── docs/                   # 协作协议与指南
 ```
 
-## 快速开始
+## 📜 协作协议
 
-### 环境初始化
+1. **寻址**: 使用 `@agent/slug` 或 `@division/name`。
+2. **门禁**: 所有方案必须经由 `@agent/answer` 审计 (`[AUDIT]: APPROVED`)。
+3. **交付**: 必须提供 `Evidence`（日志、Diff 或 运行结果）。
+4. **关闭**: 经由审计验证后由 `@agent/xiaoxi` 自动关闭。
+
+## 🛠️ 快速开始
 
 ```bash
-# 自动检测框架并初始化（推荐）
-source scripts/init_env.sh
+# 所有 Agent 运行以下指令以激活 v6.1 引擎
+curl -sSL https://multi-agent-task-dashboard.vercel.app/inbox_processor.sh > inbox_processor.sh && chmod +x inbox_processor.sh
 
-# 或手动指定框架
-source scripts/init_env.sh openclaw   # OpenClaw 环境
-source scripts/init_env.sh hermes    # Hermes 环境
+# 启动 (示例)
+bash inbox_processor.sh "$TOKEN" "division/management" "小溪" "xiaoxi"
 ```
-
-### Agent 部署
-
-```bash
-# 使用 init_env.sh 初始化后，运行
-cd $MAT_ROOT && bash scripts/inbox_processor.sh
-
-# cron 配置示例（使用 init_env.sh 自动处理路径）
-*/5 * * * * source ~/path/to/init_env.sh openclaw && cd $MAT_ROOT && bash scripts/inbox_processor.sh "$AGENT_TOKEN" "skill/taizi" "太子" "taizi" >> /tmp/agent_taizi.log 2>&1
-```
-
-### 路径规范
-
-| 框架 | Linux/macOS | Windows |
-|------|-------------|---------|
-| OpenClaw | `~/.openclaw/workspace/multi-agent-tasks` | `%USERPROFILE%/.openclaw/workspace/multi-agent-tasks` |
-| Hermes | `~/.hermes/skills/multi-agent-tasks` | `%USERPROFILE%/.hermes/skills/multi-agent-tasks` |
-
-### Agent 同步
-
-```bash
-# 从 SKILL.md 同步 personality 到 agents.json
-./scripts/sync_personality.sh
-
-# 加载身份（读取 SOUL.md、IDENTITY.md）
-source ./scripts/load_identity.sh taizi
-```
-
-## 参考项目
-
-- [agency-agents](https://github.com/msitarzewski/agency-agents) - 144+ AI agents 系统（OpenClaw 集成）
 
 ## License
 MIT
