@@ -31,9 +31,25 @@
 │   ├── task-hub-commander/ # 管理端技能
 │   ├── task-hub-collector/ # 审计端技能
 │   └── task-hub-executor/  # 执行端技能
-├── inbox_processor.sh      # 核心引擎 (v6.1.0)
-├── agents.json             # 机构全局配置
+├── inbox_processor.sh      # 核心引擎 (v6.3.1)
+├── agents.json             # 机构全局配置 (含 personality)
 └── docs/                   # 协作协议与指南
+```
+
+## 🔄 Personality 同步 (v4.2.0)
+
+ personality 数据来源：
+- **SKILL.md**: `trait`, `summary`, `keywords` (角色级别，共用)
+- **roles/*/SOUL.md**: `soul` (Agent 个性化身份)
+
+同步脚本：`scripts/sync_personality.sh`
+
+```bash
+# 同步 personality 到 agents.json
+bash scripts/sync_personality.sh
+
+# 查看变更
+bash scripts/sync_personality.sh --dry-run
 ```
 
 ## 📜 协作协议
