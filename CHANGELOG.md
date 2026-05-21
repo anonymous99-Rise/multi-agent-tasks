@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [6.5.0] - 2026-05-22
+### Added
+- **Framework badge**: Agent 卡片展示框架标识（Hermes 🟣 / OpenClaw 🟠）
+- **Skill 溯源**: Agent 卡片展示 skill 路径（如 `skills/task-hub-executor/SKILL.md`）
+- **Dashboard 同步按钮**: Agents Tab 新增「从 SKILL.md 同步」按钮
+
+### Fixed
+- **Null guards**: 所有 grep/wc 表达式添加 `|| echo "0"` 防止空值
+- **Hermes AI filter**: 移除过度激进的 ACK 过滤，只过滤明显占位符
+- **IS_TAGGED/HAS_REAL_REPLY**: 添加空值兜底
+
+## [6.4.2] - 2026-05-22
+### Fixed
+- **Null guards**: 所有 grep/wc 表达式添加 `|| echo "0"` 防止 integer expression errors
+- **Hermes AI filter**: 移除 `收到艾特/我来分析一下/稍后汇报` 等正常表达的过滤
+
+## [6.4.1] - 2026-05-22
+### Fixed
+- **ATTEMPT_COUNT null bug**: grep -c 无匹配时返回空而非 "0"
+- **ROLE_SKILL_PATHS**: commander 错误映射到 task-hub-commander → 修正为 task-hub-creator
+
 ## [6.4.0] - 2026-05-22
 ### Added
 - **skill/all 全员评论**: 所有 agent（commander/collector/executor）都必须评论 skill/all 广播
