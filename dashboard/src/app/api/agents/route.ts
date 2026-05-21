@@ -42,7 +42,7 @@ const loadSkillFiles = async (octokit: any, owner: string, repo: string, role: s
   const skillPath = ROLE_SKILL_PATHS[role as keyof typeof ROLE_SKILL_PATHS];
   if (!skillPath) return { soul: null, identity: null };
 
-  const result = { soul: null, identity: null };
+  const result: { soul: string | null; identity: string | null } = { soul: null, identity: null };
 
   try {
     const { data: soulData }: any = await octokit.rest.repos.getContent({
