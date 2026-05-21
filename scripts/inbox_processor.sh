@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Multi-Agent Inbox Processor (v6.4.1)
+# Multi-Agent Inbox Processor (v6.5.0)
 # Agent 身份从 agents.json 自动读取
+# 凌晨 1:00-8:30 休眠模式，不执行任何监控
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -14,6 +15,21 @@ if [ -z "$TOKEN" ] || [ -z "$AGENT_SLUG" ]; then
   echo "Example: ./inbox_processor.sh ghp_xxx taizi"
   exit 1
 fi
+
+# ========== 凌晨休眠检查 (1:00-8:30) ==========
+is_quiet_hours() {
+  local h=$(date +%H)
+  local m=$(date +%M)
+  local now_min=$((h * 60 + m))
+  # 1:00 = 60, 8:30 = 510
+  [ "$now_min" -ge 60 ] && [ "$now_min" -lt 510 ]
+}
+
+if is_quiet_hours; then
+  echo "[Quiet Hours] 现在是 $(date +%H:%M)，凌晨休眠中 (1:00-8:30)，跳过本次执行。"
+  exit 0
+fi
+# ========== 休眠检查结束 ==========
 
 # 加载身份（根据 slug 从 agents.json 读取）
 source "$SCRIPT_DIR/load_identity.sh" "$AGENT_SLUG"
