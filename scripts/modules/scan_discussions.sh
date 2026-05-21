@@ -73,15 +73,21 @@ echo "$DISC_DATA" | jq -c "." | while read -r disc; do
 Discussion: #$D_NUM - $D_TITLE
 URL: $DISC_URL
 
-请生成一段**真实的分析内容**作为评论：
+你是 $AGENT_ROLE（$AGENT_ROLE 角色）：
+- commander：协调视角，发表战略/统筹建议，擅长拆解任务和协调资源
+- collector：审计视角，评估风险和可行性，擅长发现问题和核对证据
+- executor：执行视角，提供落地思路和技术方案，擅长代码和实现
+
+请生成一段**真实的 [$AGENT_ROLE 视角分析]**：
 - 必须包含具体观点和实质分析，不能是模板占位符
 - 禁止发送\"收到艾特，我来分析一下\"这样的纯 ACK
 - 格式：使用 [${AGENT_SLUG}/analyzed] 作为标题前缀
+- 结合你的角色特点提供有价值的视角
 - 如果没有实质性内容要说，可以跳过（不用回复）
 
 请直接生成回复内容并通过 --deliver 发送到 GitHub。" \
         --deliver \
-        --timeout 300 2>&1 || echo "  → AI 调用失败，记录待处理"
+        --timeout 300 2>&1 || echo "  → AI 调用失败"
 
     elif [ "$FRAMEWORK" = "hermes" ]; then
       # Hermes: 使用 hermes chat -q 并通过 gh api 评论
@@ -90,10 +96,16 @@ URL: $DISC_URL
 Discussion: #$D_NUM - $D_TITLE
 URL: $DISC_URL
 
-请生成一段**真实的分析内容**作为评论：
+你是 $AGENT_ROLE（$AGENT_ROLE 角色）：
+- commander：协调视角，发表战略/统筹建议，擅长拆解任务和协调资源
+- collector：审计视角，评估风险和可行性，擅长发现问题和核对证据
+- executor：执行视角，提供落地思路和技术方案，擅长代码和实现
+
+请生成一段**真实的 [$AGENT_ROLE 视角分析]**：
 - 必须包含具体观点和实质分析，不能是模板占位符
 - 禁止发送\"收到艾特，我来分析一下\"这样的纯 ACK
 - 格式：使用 [${AGENT_SLUG}/analyzed] 作为标题前缀
+- 结合你的角色特点提供有价值的视角
 - 如果没有实质性内容要说，可以跳过（不用回复）
 
 请只生成评论内容，不要其他输出。"
@@ -108,7 +120,7 @@ URL: $DISC_URL
         echo "  → Hermes 生成内容为无效 ACK/占位符，跳过评论"
       elif [ -n "$ANALYSIS" ] && [ ${#ANALYSIS} -gt 50 ]; then
         DISCUSSION_ID=$(gh api graphql -f owner="$OWNER" -f repo="$REPO_NAME" -f query="query { repository(owner: \"$OWNER\", name: \"$REPO_NAME\") { discussion(number: $D_NUM) { id } } }" --jq ".data.repository.discussion.id" 2>/dev/null)
-        echo "$ANALYSIS" | gh api graphql -f discussionId="$DISCUSSION_ID" -f body=":-" -f query="mutation AddDiscussionComment($input: AddDiscussionCommentInput!) { addDiscussionComment(input: $input) { comment { id } } }" 2>&1 || echo "  → 评论失败"
+        printf '%s' "$ANALYSIS" | gh api graphql -f discussionId="$DISCUSSION_ID" -f body=- -f query="mutation AddDiscussionComment($input: AddDiscussionCommentInput!) { addDiscussionComment(input: $input) { comment { id } } }" 2>&1 || echo "  → 评论失败"
       else
         echo "  → Hermes 生成内容太短或为空，跳过"
       fi

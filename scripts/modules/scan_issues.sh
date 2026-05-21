@@ -12,9 +12,12 @@ AGENT_NAME="$3"
 AGENT_SLUG="$4"
 MY_ROLE_LABEL="$5"
 IDENTITY_LABEL="$6"
-MAX_RETRIES="${7:-3}"  # 默认最多3次重试
+FRAMEWORK="${7:-openclaw}"
+MAX_RETRIES="${8:-3}"
 
 export GITHUB_TOKEN="$TOKEN"
+
+echo "Using framework: $FRAMEWORK"
 
 echo "Scanning issues..."
 
@@ -31,24 +34,20 @@ echo "$ISSUE_DATA" | jq -c ".[]" | while read -r issue; do
   I_LABELS=$(echo "$issue" | jq -r '.labels[].name')
 
   # ========== 判断是否应该处理此 issue ==========
-  # 1. 被 @agent/xxx 明确艾特
-  # 2. 有 skill/all 标签 AND 不是 commander（commander 负责协调，不处理具体 skill）
+  # 规则：
+  # 1. 被 @agent/xxx 明确艾特 → 必须回复
+  # 2. 有 skill/all 标签 → 所有 agent 都必须评论（不能用 ACK，必须是实质性分析）
+  #    - commander：协调视角，发表战略/统筹建议
+  #    - collector：审计视角，评估风险和可行性
+  #    - executor：执行视角，提供落地思路和技术方案
 
   ISSUE_BODY=$(gh issue view $I_NUM --json body,title --jq '[.body, .title] | join(" ")' 2>/dev/null)
   IS_TAGGED=$(echo "$ISSUE_BODY" | grep -iE "@agent/${AGENT_SLUG}|@agent/all" | wc -l)
 
   HAS_SKILL_ALL=$(echo "$I_LABELS" | grep -c "skill/all" || true)
-  IS_COMMANDER=$(echo "$MY_ROLE_LABEL" | grep -c "commander" || true)
 
-  # skill/all 处理：commander 不参与具体执行，只协调
-  if [ "$HAS_SKILL_ALL" -gt 0 ] && [ "$IS_COMMANDER" -gt 0 ]; then
-    echo "Issue #$I_NUM: $I_TITLE"
-    echo "  → skill/all，但我是 commander，只协调不执行，跳过"
-    continue
-  fi
-
-  # 判断是否应该处理：被 @ 或者 (skill/all 且非 commander)
-  SHOULD_PROCESS=$((IS_TAGGED + (HAS_SKILL_ALL * (1 - IS_COMMANDER))))
+  # 判断是否应该处理：被 @ 或者有 skill/all 标签（所有 agent 都必须评论）
+  SHOULD_PROCESS=$((IS_TAGGED + HAS_SKILL_ALL))
 
   if [ "$SHOULD_PROCESS" -eq 0 ]; then
     continue
@@ -101,30 +100,73 @@ echo "$ISSUE_DATA" | jq -c ".[]" | while read -r issue; do
     # 注意：skill/all 场景下，如果已有回复，说明其他 agent 已处理
     # 脚本不重复评论
 
-  # 场景3：触发 + 没回复 → 调用 OpenClaw agent 生成真实内容
+  # 场景3：触发 + 没回复 → 调用 AI 生成真实内容
   elif [ "$SHOULD_PROCESS" -gt "0" ] && [ "$HAS_REAL_REPLY" -eq "0" ]; then
-    echo "  → 触发 skill/all 或 @mention，调用 AI 生成分析..."
+    echo "  → 触发 skill/all 或 @mention，调用 AI 生成分析 (framework=$FRAMEWORK)..."
 
     # 构建 context 用于 AI
     ISSUE_URL="https://github.com/$OWNER/multi-agent-tasks/issues/$I_NUM"
-    
-    # 调用 OpenClaw agent 生成真实分析并自动评论
-    openclaw agent \
-      --agent "$AGENT_SLUG" \
-      --message "你收到了一条 skill/all 广播或被 @mention 触发的通知。
+
+    if [ "$FRAMEWORK" = "openclaw" ]; then
+      # OpenClaw: 使用 openclaw agent --deliver
+      openclaw agent \
+        --agent "$AGENT_SLUG" \
+        --message "你收到了一条 skill/all 广播或被 @mention 触发的通知。
 
 Issue: #$I_NUM - $I_TITLE
 URL: $ISSUE_URL
 
-请生成一段**真实的分析内容**作为评论：
+你是 $AGENT_ROLE（$AGENT_ROLE 角色）：
+- commander：协调视角，发表战略/统筹建议，擅长拆解任务和协调资源
+- collector：审计视角，评估风险和可行性，擅长发现问题和核对证据
+- executor：执行视角，提供落地思路和技术方案，擅长代码和实现
+
+请生成一段**真实的 [$AGENT_ROLE 视角分析]**：
 - 必须包含具体观点和实质分析，不能是模板占位符
 - 禁止发送\"收到艾特，我来分析一下\"这样的纯 ACK
 - 格式：使用 [${AGENT_SLUG}/analyzed] 作为标题前缀
+- 结合你的角色特点提供有价值的视角
 - 如果没有实质性内容要说，可以跳过（不用回复）
 
 请直接生成回复内容并通过 --deliver 发送到 GitHub。" \
-      --deliver \
-      --timeout 300 2>&1 || echo "  → AI 调用失败，记录待处理"
+        --deliver \
+        --timeout 300 2>&1 || echo "  → AI 调用失败"
+
+    elif [ "$FRAMEWORK" = "hermes" ]; then
+      # Hermes: 使用 hermes chat -q 并通过 gh api 评论
+      AGENT_PROMPT="你收到了一条 skill/all 广播或被 @mention 触发的通知。
+
+Issue: #$I_NUM - $I_TITLE
+URL: $ISSUE_URL
+
+你是 $AGENT_ROLE（$AGENT_ROLE 角色）：
+- commander：协调视角，发表战略/统筹建议，擅长拆解任务和协调资源
+- collector：审计视角，评估风险和可行性，擅长发现问题和核对证据
+- executor：执行视角，提供落地思路和技术方案，擅长代码和实现
+
+请生成一段**真实的 [$AGENT_ROLE 视角分析]**：
+- 必须包含具体观点和实质分析，不能是模板占位符
+- 禁止发送\"收到艾特，我来分析一下\"这样的纯 ACK
+- 格式：使用 [${AGENT_SLUG}/analyzed] 作为标题前缀
+- 结合你的角色特点提供有价值的视角
+- 如果没有实质性内容要说，可以跳过（不用回复）
+
+请只生成评论内容，不要其他输出。"
+
+      ANALYSIS=$(hermes chat -q "$AGENT_PROMPT" --provider minimax-cn 2>&1)
+
+      # 过滤无效内容
+      IS_ACK=$(echo "$ANALYSIS" | grep -iE "(收到艾特|我来分析一下|稍后汇报)" | wc -l)
+      IS_PLACEHOLDER=$(echo "$ANALYSIS" | grep -iE "(\\[具体在做什么\\]|\\[证据：)" | wc -l)
+
+      if [ "$IS_ACK" -gt 0 ] || [ "$IS_PLACEHOLDER" -gt 0 ]; then
+        echo "  → Hermes: 无效 ACK/占位符，跳过"
+      elif [ -n "$ANALYSIS" ] && [ ${#ANALYSIS} -gt 50 ]; then
+        gh issue comment $I_NUM --body "$ANALYSIS" 2>&1 || echo "  → 评论失败"
+      else
+        echo "  → Hermes: 内容太短或为空，跳过"
+      fi
+    fi
 
   # 场景4：触发 + 有回复 + 检查重试
   elif [ "$SHOULD_PROCESS" -gt "0" ] && [ "$HAS_REAL_REPLY" -gt "0" ]; then
