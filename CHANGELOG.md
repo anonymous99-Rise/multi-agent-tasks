@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.9.0] - 2026-05-21
+### Added
+- **agency-agents 最佳实践**: 基于 144+ agents 项目优化 SKILL.md
+- **Core Mission 章节**: 核心使命定义
+- **Success Metrics**: 成功标准量化指标
+- **Processes 流程**: Phase 1-4 详细执行流程
+- **Deliverables 模板**: 任务完成报告、进度报告、战报模板
+- **Error Handling 章节**: 错误处理策略
+- **Status Reporting 模板**: 状态报告模板
+- **禁止行为 (🚫)**: 明确禁止的行为
+
+### Changed
+- **SKILL.md v3.5.0**: 三个角色全部增强
+  - task-hub-executor: 4435 bytes
+  - task-hub-collector: 4205 bytes
+  - task-hub-creator: 4547 bytes
+
+### New
+- **docs/review_and_optimization_CN.md**: agency-agents 对比分析文档
+
 ## [3.8.0] - 2026-05-21
 ### Added
 - **sync_personality.sh**: 自动化同步脚本，从 SKILL.md 读取 personality 到 agents.json
