@@ -44,7 +44,7 @@ echo "$ISSUE_DATA" | jq -c ".[]" | while read -r issue; do
   ISSUE_BODY=$(gh issue view $I_NUM --json body,title --jq '[.body, .title] | join(" ")' 2>/dev/null)
   IS_TAGGED=$(echo "$ISSUE_BODY" | grep -iE "@agent/${AGENT_SLUG}|@agent/all" | wc -l)
 
-  HAS_SKILL_ALL=$(echo "$I_LABELS" | grep -c "skill/all" || true)
+  HAS_SKILL_ALL=$(echo "$I_LABELS" | grep -c "skill/all" || echo "0")
 
   # 判断是否应该处理：被 @ 或者有 skill/all 标签（所有 agent 都必须评论）
   SHOULD_PROCESS=$((IS_TAGGED + HAS_SKILL_ALL))
@@ -60,17 +60,17 @@ echo "$ISSUE_DATA" | jq -c ".[]" | while read -r issue; do
   HAS_REAL_REPLY=$(gh issue view $I_NUM --json comments --jq \
     "[.comments[] | select(.author.login == \"agent/${AGENT_SLUG}\" and (.body | contains(\"[@${AGENT_SLUG}]\") or .body | contains(\"[${AGENT_SLUG}]/analyzed\") or (.body | contains(\"[${AGENT_SLUG}]\") and .body | contains(\"/\"))))] | length" 2>/dev/null)
 
-  HAS_QA_PASS=$(echo "$I_LABELS" | grep -c "task/qa-pass" || true)
+  HAS_QA_PASS=$(echo "$I_LABELS" | grep -c "task/qa-pass" || echo "0")
 
   # ========== 重试机制：检查之前的 attempts ==========
   ATTEMPT_COUNT=$(gh issue view $I_NUM --json comments --jq \
     "[.comments[] | select(.author.login == \"agent/${AGENT_SLUG}\" and .body | contains(\"[ATTEMPT\"))] | length" 2>/dev/null)
 
   # ========== Pipeline Phase 检测 ==========
-  HAS_PHASE_PM=$(echo "$I_LABELS" | grep -c "phase/pm" || true)
-  HAS_PHASE_DEV=$(echo "$I_LABELS" | grep -c "phase/dev" || true)
-  HAS_PHASE_QA=$(echo "$I_LABELS" | grep -c "phase/qa" || true)
-  HAS_PHASE_INTEGRATION=$(echo "$I_LABELS" | grep -c "phase/integration" || true)
+  HAS_PHASE_PM=$(echo "$I_LABELS" | grep -c "phase/pm" || echo "0")
+  HAS_PHASE_DEV=$(echo "$I_LABELS" | grep -c "phase/dev" || echo "0")
+  HAS_PHASE_QA=$(echo "$I_LABELS" | grep -c "phase/qa" || echo "0")
+  HAS_PHASE_INTEGRATION=$(echo "$I_LABELS" | grep -c "phase/integration" || echo "0")
 
   echo "Issue #$I_NUM: $I_TITLE"
   echo "  → tagged=${IS_TAGGED}, skill/all=${HAS_SKILL_ALL}, qa_pass=${HAS_QA_PASS}, attempt=${ATTEMPT_COUNT}"

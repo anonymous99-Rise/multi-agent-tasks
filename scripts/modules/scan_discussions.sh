@@ -33,7 +33,7 @@ echo "$DISC_DATA" | jq -c "." | while read -r disc; do
   # 1. 实质性回复（[@agent/xxx] 格式）— agent 的正式分析，永久有效
   # 2. agent/ 分析回复（[xxx]/analyzed 格式）— skill/all 场景下的分析报告
   # 3. skill/all 广播回复（[xxx] [division/xxx]/xxx 格式）— agent 的实质性广播回复
-  HAS_REAL_REPLY=$(echo "$disc" | jq -r "[.comments.nodes[] | select(.body | contains(\"[@agent/${AGENT_SLUG}]\") or .body | contains(\"[${AGENT_SLUG}]/analyzed\") or (.body | contains(\"[${AGENT_SLUG}]\") and .body | contains(\"/\")))] | length" 2>/dev/null)
+  HAS_REAL_REPLY=$(echo "$disc" | jq -r "[.comments.nodes[] | select(.body | contains(\"[@agent/${AGENT_SLUG}]\") or .body | contains(\"[${AGENT_SLUG}]/analyzed\") or (.body | contains(\"[${AGENT_SLUG}]\") and .body | contains(\"/\")))] | length" 2>/dev/null || echo "0")
 
   # 检查是否被艾特（标题+正文，不查评论避免自己触发自己）
   # @agent/all → 所有agent都要回，@agent/taizi → 只有我回
@@ -41,7 +41,7 @@ echo "$DISC_DATA" | jq -c "." | while read -r disc; do
 
   # skill/all label 也视为被艾特（全员广播）
   D_LABELS=$(echo "$disc" | jq -r ".labels.nodes[].name" 2>/dev/null)
-  HAS_SKILL_ALL=$(echo "$D_LABELS" | grep -c "skill/all" || true)
+  HAS_SKILL_ALL=$(echo "$D_LABELS" | grep -c "skill/all" || echo "0")
 
   # 触发条件：被@ 或 有 skill/all label
   SHOULD_RESPOND=$((IS_TAGGED + HAS_SKILL_ALL))
