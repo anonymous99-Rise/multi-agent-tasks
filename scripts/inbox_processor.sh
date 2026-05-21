@@ -40,9 +40,9 @@ bash "$SCRIPT_DIR/modules/quiet_period.sh" "$AGENT_SLUG" || exit 0
 bash "$SCRIPT_DIR/modules/git_sync.sh" "$ROOT_DIR"
 bash "$SCRIPT_DIR/modules/heartbeat.sh" "$DASHBOARD_URL" "$AGENT_NAME" "$MY_ROLE_LABEL"
 bash "$SCRIPT_DIR/modules/scan_discussions.sh" \
-  "$TOKEN" "$OWNER" "$REPO_NAME" "$AGENT_NAME" "$AGENT_SLUG" "$VIRTUAL_MENTION" "$MY_ROLE_LABEL"
+  "$TOKEN" "$OWNER" "$REPO_NAME" "$AGENT_NAME" "$AGENT_SLUG" "$VIRTUAL_MENTION" "$MY_ROLE_LABEL" "$FRAMEWORK"
 bash "$SCRIPT_DIR/modules/scan_issues.sh" \
-  "$TOKEN" "$OWNER" "$AGENT_NAME" "$AGENT_SLUG" "$MY_ROLE_LABEL" "$IDENTITY_LABEL"
+  "$TOKEN" "$OWNER" "$AGENT_NAME" "$AGENT_SLUG" "$MY_ROLE_LABEL" "$IDENTITY_LABEL" "$FRAMEWORK"
 bash "$SCRIPT_DIR/modules/daily_report.sh" \
   "$TOKEN" "$OWNER" "$REPO_NAME" "$AGENT_NAME" "$MY_ROLE_LABEL" "$AGENT_SLUG"
 bash "$SCRIPT_DIR/modules/update_activity.sh" "$AGENT_SLUG"
