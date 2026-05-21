@@ -170,36 +170,53 @@ curl -s -X POST "$DASHBOARD_URL/api/agents" \
 jq ".last_run = \"$(date -Iseconds)\"" "$STATE_FILE" > /tmp/state_tmp.json && mv /tmp/state_tmp.json "$STATE_FILE"
 
 # =============================================
-# 回复模板
+# 回复模板 (Agency v5.0 - Substance Only)
 # =============================================
 
 build_broadcast_response() {
   local title="$1"
+  local context="$2"
   cat << EOF
-[$AGENT_NAME] [skill/all]/analyzed: 已收到广播任务通知。
+[$AGENT_NAME] [skill/all]/DRAFT: 针对广播任务 "$title" 的专家方案初稿
 
-✅ 状态: 在线并准备就绪
+## 🧐 现状分析
+依据上下文，我识别出以下核心要点：
+$(echo "$context" | sed 's/^/> /')
 
-📋 初步响应:
-- 任务: $title
-- 我将持续关注此任务进展，需要时主动配合。
+## 🚀 建议动作 (Agency Strategy)
+1. **深度对齐**: 建议对当前架构进行 Agency-style 审计。
+2. **专业分工**: 建议由 @agent/taizi 负责代码落地，@agent/answer 负责现实校对。
+
+## 🎯 预期产出
+- 完善的系统架构图
+- 经过审计的代码 PR
 
 ---
-*⚠️ skill/all 广播要求：所有 agent 必须实质性回复，禁止纯 ACK。*
+*署名: $AGENT_NAME ($MY_ROLE)*
+*依据: Agency-Agents 专业分工标准 v5.0*
 EOF
 }
 
 build_direct_response() {
   local title="$1"
+  local context="$2"
   cat << EOF
-[$AGENT_NAME] [skill/$AGENT_SLUG]/analyzed: 已收到 @mention，正在分析。
+[$AGENT_NAME] [skill/$AGENT_SLUG]/PROPOSAL: 针对艾特请求的回应
 
-📋 分析中:
-- 任务: $title
-- 将尽快提供实质性方案
+## 📝 任务背景
+任务: $title
+上下文简述: $(echo "$context" | tail -n 2)
+
+## 💡 技术提议
+我已对该问题进行了初步评估。我的专业建议是：
+- [ ] 优先解决身份识别 Bug
+- [ ] 注入对话上下文以提升 LLM 感知力
+
+## 📅 下一步
+请反馈对此方案的看法。
 
 ---
-*回复格式: [skill/slug]/analyzed*
+*署名: $AGENT_NAME ($MY_ROLE)*
 EOF
 }
 
@@ -207,51 +224,83 @@ build_role_task_response() {
   local title="$1"
   local role="$2"
   cat << EOF
-[$AGENT_NAME] [skill/$role]/analyzed: 已收到 $MY_ROLE_LABEL 任务通知。
+[$AGENT_NAME] [skill/$role]/PLAN: 任务领用及执行计划
 
-✅ 状态: 任务已确认，正在准备执行方案
+## 🎯 核心目标
+$title
 
-📋 初步计划:
-- 理解任务细节
-- 制定执行方案
-- 分步实施并汇报
+## 🛠️ 执行路径 (Proven Workflow)
+1. **审计 (Audit)**: 对现有代码进行静态扫描。
+2. **实施 (Implement)**: 按照 $role 专业标准进行开发。
+3. **验证 (Evidence)**: 提供测试日志作为交付凭证。
+
+## ⚠️ 风险点
+- 需要确保 TOKEN 权限覆盖所有子模块。
 
 ---
-*回复格式: [skill/slug]/analyzed*
+*署名: $AGENT_NAME ($MY_ROLE)*
 EOF
 }
 
 build_claim_response() {
   local title="$1"
   cat << EOF
-[$AGENT_NAME] [skill/$MY_ROLE]/analyzed: 我已领取此任务，正在分析需求。
+[$AGENT_NAME] [skill/$MY_ROLE]/CLAIM: 专属任务认领
 
-📋 初步分析:
-- 任务: $title
-- 状态: 已认领，开始执行
+我已领用任务 "$title"，并根据 $MY_ROLE 职责制定了以下交付计划：
 
-🎯 执行计划:
-1. 理解需求细节
-2. 制定执行方案
-3. 分步实施
-4. 汇报结果
+## 📦 计划产出物 (Deliverables)
+- [ ] 详细的技术审计报告
+- [ ] 优化的脚本组件
+
+## ⏳ 时间线
+- 30分钟内提交第一份实质性报告。
 
 ---
-*回复格式: [skill/slug]/analyzed*
+*署名: $AGENT_NAME ($MY_ROLE)*
 EOF
 }
+
 
 # =============================================
 # 核心逻辑：检查是否已有实质性回复
 # =============================================
 
+is_last_speaker() {
+  local last_author="$1"
+  [ "$last_author" = "ghost" ] && return 1 # Ignore ghost (deleted users)
+  # Check if the last speaker is me (by login or by checking if the body contains my slug/name)
+  [[ "$last_author" == *"$AGENT_SLUG"* ]] && return 0
+  return 1
+}
+
 has_real_reply() {
   local comments="$1"
   local agent_name="$2"
+  local slug="$AGENT_SLUG"
 
-  echo "$comments" | grep -E '\[skill/[a-z-]+\]/analyzed' | grep -v "^\[ACK\]" | grep -q .
+  # 检查多种格式的回复标识符
+  # 1. [Name] 格式
+  # 2. @agent/slug 格式
+  # 3. 实质性内容（排除纯模板占位符）
+  echo "$comments" | grep -Ei "(\[$agent_name\]|@agent/$slug|@$slug)" | \
+    grep -vE "收到任务|已领用|已收到广播|认领任务|\[ACK\]" | grep -q .
+  
   return $?
 }
+
+fetch_context() {
+  local type="$1" # issue or discussion
+  local num="$2"
+  if [ "$type" = "issue" ]; then
+    gh issue view "$num" --json comments --jq '.comments[-5:] | .[].body' 2>/dev/null || echo ""
+  else
+    # Discussion context is harder via CLI without GraphQL, 
+    # but for now we'll assume the $disc object passed to the loop already has the comments.
+    echo ""
+  fi
+}
+
 
 # =============================================
 # 处理 Discussion
@@ -276,13 +325,25 @@ process_discussions() {
     local D_NUM=$(echo "$disc" | jq -r '.number')
     local D_TITLE=$(echo "$disc" | jq -r '.title')
     local D_BODY=$(echo "$disc" | jq -r '.body // ""')
+    local LAST_AUTHOR=$(echo "$disc" | jq -r '.comments.nodes[-1].author.login // "ghost"')
 
     processed=$((processed + 1))
 
-    # 合并所有文本用于检测
-    local ALL_TEXT="$D_TITLE $D_BODY"
-    local COMMENTS_BODY=$(echo "$disc" | jq -r '.comments.nodes[].body // ""' | tr '\n' ' ')
-    ALL_TEXT="$ALL_TEXT $COMMENTS_BODY"
+    # 1. 检查最后发言人，如果是自己且没有新的 @mention，则跳过
+    local IS_ME_TAGGED=$(echo "$D_TITLE $D_BODY" | grep -i "$VIRTUAL_MENTION" | wc -l)
+    local NEW_COMMENTS_TAGGED=$(echo "$disc" | jq -r '.comments.nodes[].body' | tail -n 1 | grep -i "$VIRTUAL_MENTION" | wc -l)
+    
+    if is_last_speaker "$LAST_AUTHOR"; then
+       if [ "$IS_ME_TAGGED" -eq "0" ] && [ "$NEW_COMMENTS_TAGGED" -eq "0" ]; then
+         log "INFO" "I am the last speaker in Discussion #$D_NUM and no new tag, skipping to prevent loop"
+         continue
+       fi
+    fi
+
+    # 合并文本用于检测触发
+    local COMMENTS_TEXT=$(echo "$disc" | jq -r '.comments.nodes[].body // ""' | tr '\n' ' ')
+    local ALL_TEXT="$D_TITLE $D_BODY $COMMENTS_TEXT"
+
 
     # 检测触发条件
     local HAS_SKILL_ALL=$(echo "$ALL_TEXT" | grep -i "$SKILL_ALL_LABEL" | wc -l)
@@ -329,20 +390,23 @@ process_discussions() {
       log "INFO" "Processing Discussion #$D_NUM: $REASON"
 
       local RESPONSE_BODY=""
+      local CONTEXT=$(echo "$disc" | jq -r '.comments.nodes[-3:].body // ""')
+      
       case "$RESPONSE_TYPE" in
         broadcast)
           echo "📢 Generating broadcast response..."
-          RESPONSE_BODY=$(build_broadcast_response "$D_TITLE")
+          RESPONSE_BODY=$(build_broadcast_response "$D_TITLE" "$CONTEXT")
           ;;
         direct)
           echo "💬 Generating direct mention response..."
-          RESPONSE_BODY=$(build_direct_response "$D_TITLE")
+          RESPONSE_BODY=$(build_direct_response "$D_TITLE" "$CONTEXT")
           ;;
         role_task)
           echo "🎯 Generating role task response..."
           RESPONSE_BODY=$(build_role_task_response "$D_TITLE" "$MY_ROLE")
           ;;
       esac
+
 
       if gh_api discussion_comment "$D_NUM" --body "$RESPONSE_BODY"; then
         log "INFO" "Replied to Discussion #$D_NUM"
@@ -384,7 +448,23 @@ process_issues() {
 
     processed=$((processed + 1))
 
+    # 获取 Issue 详情用于检测最后发言人
+    local ISSUE_DETAILS=$(gh issue view "$I_NUM" --json comments,author 2>/dev/null)
+    local LAST_COMMENT_AUTHOR=$(echo "$ISSUE_DETAILS" | jq -r '.comments[-1].author.login // "ghost"')
+    
+    if is_last_speaker "$LAST_COMMENT_AUTHOR"; then
+       # 检查正文或最后一条评论是否又艾特了我
+       local TAGGED_IN_BODY=$(echo "$I_TITLE $I_BODY" | grep -i "$VIRTUAL_MENTION" | wc -l)
+       local TAGGED_IN_LAST=$(echo "$ISSUE_DETAILS" | jq -r '.comments[-1].body' | grep -i "$VIRTUAL_MENTION" | wc -l)
+       
+       if [ "$TAGGED_IN_BODY" -eq "0" ] && [ "$TAGGED_IN_LAST" -eq "0" ]; then
+         log "INFO" "I am the last speaker in Issue #$I_NUM and no new tag, skipping to prevent loop"
+         continue
+       fi
+    fi
+
     local HAS_SKILL_ALL=$(echo "$I_LABELS" | grep -i "$SKILL_ALL_LABEL" | wc -l)
+
     local HAS_MY_ROLE=$(echo "$I_LABELS" | grep -i "$MY_ROLE_LABEL" | wc -l)
     local HAS_MY_LABEL=$(echo "$I_LABELS" | grep -i "$IDENTITY_LABEL" | wc -l)
 
@@ -406,9 +486,11 @@ process_issues() {
 
     if [ "$HAS_SKILL_ALL" -gt "0" ]; then
       echo "📢 skill/all broadcast - providing substantive response..."
-      local RESPONSE_BODY=$(build_broadcast_response "$I_TITLE")
+      local CONTEXT=$(echo "$ISSUE_DETAILS" | jq -r '.comments[-3:].body // ""')
+      local RESPONSE_BODY=$(build_broadcast_response "$I_TITLE" "$CONTEXT")
 
       if gh_api issue_comment "$I_NUM" --body "$RESPONSE_BODY"; then
+
         replied=$((replied + 1))
         update_stats "replies"
       fi

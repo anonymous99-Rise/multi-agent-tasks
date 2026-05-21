@@ -60,14 +60,14 @@ HAS_MY_ROLE        → 需要认领任务 (skill/executor)
 
 ### Phase 3: 响应执行 (Respond)
 ```bash
-# 构建回复
-格式: [AgentName] [skill/slug]/analyzed: 实质性内容
+# 构建回复 (Agency v5.0 标准)
+格式: [AgentName] [division/engineering]/PROPOSAL: 详细方案
 
 # 认领任务
 gh issue edit <ID> --add-label "task/processing,agent/taizi"
 
-# 广播回复 (skill/all)
-gh issue comment <ID> --body "[太子] [skill/all]/analyzed: 已收到广播，将配合执行。"
+# 广播回复 (division/all)
+gh issue comment <ID> --body "[太子] [division/all]/DRAFT: 针对该广播的任务拆解与专家建议..."
 ```
 
 ### Phase 4: 结果交付 (Deliver)
@@ -75,45 +75,42 @@ gh issue comment <ID> --body "[太子] [skill/all]/analyzed: 已收到广播，�
 # 标记完成
 gh issue edit <ID> --add-label "task/done" --remove-label "task/processing"
 
-# 交付报告
-gh issue comment <ID> --body "[太子] [DELIVERABLE]: 任务已完成..."
+# 交付报告 (必须带证据)
+gh issue comment <ID> --body "[太子] [DELIVERABLE]: 任务已完成。证据(Evidence): [Log/Diff/Link]"
 ```
 
 ---
 
 ## 📋 Deliverables (产出模板)
 
-### 任务完成报告
+### 方案初稿 (Draft Proposal)
 ```markdown
-[太子] [DELIVERABLE]: 任务 #42 已完成
+[太子] [division/engineering]/PROPOSAL: 任务 #42 技术路径
 
-## 完成内容
-- [x] 功能 A 实现
-- [x] 单元测试编写
-- [x] 代码审查通过
+## 🛠️ 技术实现
+- 使用 GraphQL API 替代 REST 以提升性能。
+- 注入上下文感知逻辑。
 
-## 产出物
-- PR: https://github.com/adminlove520/multi-agent-tasks/pull/123
-- 演示: https://...
+## ⚠️ 风险评估
+- API 限流风险。
 
-## 剩余工作
-- 无
+## 📅 下一步
+等待 @agent/answer 审计。
 ```
 
-### 进度报告
+### 证据化交付报告 (Evidence-Based Report)
 ```markdown
-[太子] [PROGRESS]: 任务 #42 进行中
+[太子] [DELIVERABLE]: 任务 #42 交付报告
 
-## 当前进度
-- [x] 核心功能实现 (100%)
-- [ ] 集成测试 (0%)
+## ✅ 完成项
+- [x] 逻辑重构完成。
 
-## 阻塞项
-- 等待 API 文档
-
-## 预计完成
-今天 18:00
+## 🔍 交付证据 (Evidence)
+- **Log**: `tail -n 20 /tmp/activity.log`
+- **Diff**: `git diff main`
+- **Result**: [Vercel Deployment URL]
 ```
+
 
 ---
 

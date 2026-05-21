@@ -1,32 +1,34 @@
-# 📜 Multi-Agent 协作社交协议 (v3.2.7)
+# 📜 Agency 协作协议 (v5.0.0)
 
-## 1. 虚拟身份路由 (Virtual Identity Routing)
-由于共用 GitHub 账号，Agent 必须通过以下方式定位彼此：
-- **虚拟艾特格式**: `@agent/xiaoxi`, `@agent/answer`, `@agent/taizi`。
-- **消息前缀**: 所有回复必须以 `[AgentName]` 开头。
-- **强制感知**: 只要评论中出现 `@agent/自身名字`，该 Agent 必须将其视为高优先级通知并立即回应。
+## 1. 专家分工与寻址 (Division-Based Routing)
+Agent 必须根据专业部门进行任务认领与交流：
+- **寻址格式**: `@agent/slug` 或 `@division/name`。
+- **部门定义**:
+    - `division/management`: 决策与拆解 (@xiaoxi)
+    - `division/qa_audit`: 现实校对与审计 (@answer)
+    - `division/engineering`: 技术落地与架构 (@taizi)
 
-## 2. 讨论隔离协议 (Isolation)
-- **Issue 评论区**: 仅限状态上报（Claim/Done/Blocked）。
-- **Discussion 广场**: 唯一合法的技术方案交流区。任何在 Issue 下发起的讨论将被 Collector 标记为“无效”并强制移动。
+## 2. 产出导向协议 (Substance-Only Protocol)
+- **禁令牌**: 严禁纯 ACK（如“收到”、“已领用”）。
+- **强制提案**: 第一条回复必须是 `[PROPOSAL]` 或 `[DRAFT]`，包含技术路径。
+- **证据化交付**: `[DELIVERABLE]` 必须包含 `Evidence` 板块（Logs/Diff/Link）。
 
-## 3. 跨平台同步 (Sync)
-- **Telegram 指令**: 使用 `/discuss` 发起脑暴，`/new` 发起具体任务。
-- **HTML 解析**: Telegram 回传使用 HTML 格式。
+## 3. 审计门禁机制 (Audit Gate)
+- **流程**: PM 定义任务 -> Specialist 提交 Proposal -> **QA Audit (门禁)** -> Specialist 执行。
+- **Audit 要求**: Answer 必须对 Proposal 进行可行性评估。未通过审计的方案不得进入执行阶段。
 
+## 4. 持续性上下文感知 (Context Continuity)
+- **上下文回溯**: Agent 必须回溯最后 5 条评论以确保对话连贯性。
+- **接龙逻辑**: 每次回复末尾必须明确指引下一位协作者（Next Step @agent/name）。
 
-## 3. 任务状态流转协议 (FSM)
+## 5. 任务状态机 (V5.0 FSM)
 - `task`: 待处理。
-- `task/processing`: 处理中 (须带 `agent/name` 标签)。
-- `status/discussing`: 讨论中 (存在疑问，已转移至 Discussions)。
-- `task/done`: 已完成。
-- `task/blocked`: 被阻塞 (外部权限/环境问题，需人类介入)。
-- `task/failed`: 失败。
+- `status/proposing`: 方案制定中。
+- `status/auditing`: 方案审计中（由 Answer 介入）。
+- `task/processing`: 审计通过，正在实施。
+- `task/done`: 已完成（需附带 Evidence）。
+- `task/blocked`: 阻塞中。
 
-
-## 3. 冲突解决机制
-- **抢单冲突**: 若两个 Agent 同时尝试锁定任务，以 GitHub 标签操作的先后顺序为准。第二个 Agent 发现标签已变为 `task/processing` 且存在他人身份标签时，必须立即退出。
-- **逻辑冲突**: 在讨论区通过“权重投票”（由指挥官设定权重）解决技术路线分歧。
-
-## 4. 自动化心跳 (Heartbeat)
-Agent 每次运行 `inbox_processor.sh` 时，应在自身对应的 `Heartbeat` Issue（或指定文件）中更新时间戳，以便指挥部监控在线状态。
+## 6. 冲突解决
+- **抢单**: 原子标签锁定机制。
+- **路线分歧**: 在 Discussions 中进行 Reality Check，由小溪根据 Audit 报告做最终裁决。
