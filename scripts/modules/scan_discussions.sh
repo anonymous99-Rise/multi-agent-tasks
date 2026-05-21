@@ -56,9 +56,30 @@ echo "$DISC_DATA" | jq -c "." | while read -r disc; do
   # 场景1：有实质性回复 → 跳过（agent 已处理）
   if [ "$HAS_REAL_REPLY" -gt "0" ]; then
     echo "  → 有实质性回复，跳过（agent AI 已处理）"
-  # 场景2：触发但没回复 → 记录日志，等待 agent AI 响应
+  # 场景2：触发但没回复 → 调用 OpenClaw agent 生成真实内容
   elif [ "$SHOULD_RESPOND" -gt "0" ]; then
-    echo "  → 触发，等待 agent AI 响应（脚本不自动评论）"
+    echo "  → 触发，调用 AI 生成分析..."
+
+    # 构建 context 用于 AI
+    DISC_URL="https://github.com/$OWNER/$REPO_NAME/discussions/$D_NUM"
+    
+    # 调用 OpenClaw agent 生成真实分析并自动评论
+    openclaw agent \
+      --agent "$AGENT_SLUG" \
+      --message "你收到了一条 discussion 被 @mention 或 skill/all 广播触发的通知。
+
+Discussion: #$D_NUM - $D_TITLE
+URL: $DISC_URL
+
+请生成一段**真实的分析内容**作为评论：
+- 必须包含具体观点和实质分析，不能是模板占位符
+- 禁止发送\"收到艾特，我来分析一下\"这样的纯 ACK
+- 格式：使用 [${AGENT_SLUG}/analyzed] 作为标题前缀
+- 如果没有实质性内容要说，可以跳过（不用回复）
+
+请直接生成回复内容并通过 --deliver 发送到 GitHub。" \
+      --deliver \
+      --timeout 300 2>&1 || echo "  → AI 调用失败，记录待处理"
   # 场景3：没触发 → 跳过
   else
     echo "  → 没被艾特且无 skill/all，跳过"

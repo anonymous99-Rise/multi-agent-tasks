@@ -101,11 +101,30 @@ echo "$ISSUE_DATA" | jq -c ".[]" | while read -r issue; do
     # 注意：skill/all 场景下，如果已有回复，说明其他 agent 已处理
     # 脚本不重复评论
 
-  # 场景3：触发 + 没回复 → 记录日志，等待 agent AI 响应
+  # 场景3：触发 + 没回复 → 调用 OpenClaw agent 生成真实内容
   elif [ "$SHOULD_PROCESS" -gt "0" ] && [ "$HAS_REAL_REPLY" -eq "0" ]; then
-    echo "  → 触发 skill/all 或 @mention，等待 agent AI 响应（脚本不自动评论）"
-    # 脚本只记录日志，不发送任何评论
-    # agent AI 检测到 skill/all 或被 @ 时，应该发送真实分析
+    echo "  → 触发 skill/all 或 @mention，调用 AI 生成分析..."
+
+    # 构建 context 用于 AI
+    ISSUE_URL="https://github.com/$OWNER/multi-agent-tasks/issues/$I_NUM"
+    
+    # 调用 OpenClaw agent 生成真实分析并自动评论
+    openclaw agent \
+      --agent "$AGENT_SLUG" \
+      --message "你收到了一条 skill/all 广播或被 @mention 触发的通知。
+
+Issue: #$I_NUM - $I_TITLE
+URL: $ISSUE_URL
+
+请生成一段**真实的分析内容**作为评论：
+- 必须包含具体观点和实质分析，不能是模板占位符
+- 禁止发送\"收到艾特，我来分析一下\"这样的纯 ACK
+- 格式：使用 [${AGENT_SLUG}/analyzed] 作为标题前缀
+- 如果没有实质性内容要说，可以跳过（不用回复）
+
+请直接生成回复内容并通过 --deliver 发送到 GitHub。" \
+      --deliver \
+      --timeout 300 2>&1 || echo "  → AI 调用失败，记录待处理"
 
   # 场景4：触发 + 有回复 + 检查重试
   elif [ "$SHOULD_PROCESS" -gt "0" ] && [ "$HAS_REAL_REPLY" -gt "0" ]; then
