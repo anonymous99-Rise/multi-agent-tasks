@@ -1,45 +1,42 @@
 {
-  "agency_version": "6.2.0",
+  "agency_version": "6.3.1",
   "agents": [
     {
       "id": 1777736021322,
       "name": "小溪",
       "slug": "xiaoxi",
-      "role": "agency_lead",
+      "archetype": "management",
+      "capabilities": ["CAN_CLOSE", "CAN_DELEGATE", "CAN_STRATEGIZE"],
       "label": "division/management",
       "framework": "openclaw",
       "tgToken": "********",
       "tgUsername": "caddycherrybot",
-      "personality_file": "roles/xiaoxi/SOUL.md",
-      "rules_file": "roles/xiaoxi/AGENTS.md",
-      "agents_prompt": "你现在是 Agency Lead。核心指令：1. 严禁 ACK，第一句必须是实质性分析。2. 使用 '委派模式'：如果任务复杂，立即创建子 Issue 或指派 Specialist。3. 只有看到 Answer 确认 VERIFIED 后，你才负责关闭任务。4. 模仿 Accio 模式，主动调用工具进行深度调研。"
+      "agents_prompt": "你现在是 Agency Lead。核心指令：1. 严禁 ACK。2. 只有看到 VERIFIED 信号后负责关闭任务。3. 主动调用工具调研。"
     },
     {
       "id": 1777736058758,
       "name": "Answer",
       "slug": "answer",
-      "role": "reality_checker",
+      "archetype": "qa_audit",
+      "capabilities": ["CAN_AUDIT", "CAN_VERIFY"],
       "label": "division/qa_audit",
       "framework": "openclaw",
       "tgToken": "********",
       "tgUsername": "Anwsermebot",
-      "personality_file": "roles/answer/SOUL.md",
-      "rules_file": "roles/answer/AGENTS.md",
-      "agents_prompt": "你现在是 Reality Checker。核心指令：1. 严禁 ACK。2. 必须实质性审查 Taizi 的 Proposal。3. 验收时必须核对 Evidence。4. 如果 Taizi 只有 ACK，直接在评论区进行‘差评’并追收债务。"
+      "agents_prompt": "你现在是 Reality Checker。核心指令：1. 严禁 ACK。2. 审计 Proposal。3. 核对 Evidence 并发布 VERIFIED 信号。"
     },
     {
       "id": 1777736107102,
       "name": "太子",
       "slug": "taizi",
-      "role": "principal_architect",
+      "archetype": "engineering",
+      "capabilities": ["CAN_EXECUTE", "CAN_PROPOSE"],
       "label": "division/engineering",
       "framework": "hermes",
       "tgToken": "********",
       "tgUsername": "help_localbot",
-      "personality_file": "roles/taizi/SOUL.md",
-      "rules_file": "roles/taizi/AGENTS.md",
-      "agents_prompt": "你现在是 Principal Architect。核心指令：1. 严禁 ACK。2. 所有的回复必须带 [PROPOSAL] 或 [DELIVERABLE]。3. 必须提供技术证据 (Evidence)。4. 模仿 Accio，使用 sub-agent 思路拆解自己的开发步骤。"
+      "agents_prompt": "你现在是 Principal Architect。核心指令：1. 严禁 ACK。2. 提供 [PROPOSAL] 和 [DELIVERABLE]。3. 附带 Evidence。"
     }
   ],
-  "lastUpdated": "2026-05-21T15:00:00.000Z"
+  "lastUpdated": "2026-05-21T16:00:00.000Z"
 }

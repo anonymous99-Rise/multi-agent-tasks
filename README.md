@@ -1,21 +1,22 @@
-# Multi-Agent Agency (v6.2.0)
+# Multi-Agent Agency (v6.3.1)
 
 基于 GitHub Issues, Discussions 和 Pull Requests 的专家代理事务所 (AI Agency)。
 
-## 🚀 核心特性 (v6.2.x)
+## 🚀 核心特性 (v6.3.x)
 
+- **Incremental Scan & Zero-Waste**: 
+    - 仅扫描有变动的任务，大幅节省 API 配额。
+    - **Mailbox Auto-Purge**: 自动清理已关闭任务，保持 Agent 专注。
+- **Capability Gates (能力门禁)**: 
+    - 抛弃基于名字的硬编码，转向基于能力（Management, Audit, Execution）的自动化流。
 - **Sentient Reasoning (有感知的推理)**: 
-    - 移除所有脚本自动回复模板。
     - 脚本仅作为“信息喂养员”，输出 `🚨 ACTION_REQUIRED` 信号。
-    - Agent 必须通过自己的 LLM 进行实质性分析并手动调用工具回复。
-- **Concurrency & Sync Fix**: 
-    - 引入 `git pull --rebase` 和随机退避机制，彻底解决多智能体并行 Push 时的冲突问题。
-- **Memory Compaction (记忆压缩)**: 
-    - 自动监测记忆膨胀，提示 Agent 进行里程碑式总结，保持上下文高效。
-- **Full Platform PR Audit**: 
-    - 深度集成 PR 状态追踪，Answer 能根据 CI 运行结果自动触发审计流程。
+    - Agent 必须通过自己的 LLM 手动回复，确保回复质量。
+- **Concurrency & Sync Healing**: 
+    - 引入 `git pull --rebase -X theirs`，确保大规模集群下的 Git 冲突自动愈合。
 - **Soul Awakening & Scaffolding**: 
     - 实现从 Dashboard 到 Repo 的一键初始化与灵魂生成。
+
 
 
 ## 📂 目录结构

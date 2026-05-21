@@ -1,13 +1,15 @@
-# Identity & Memory ({{AGENT_NAME}})
+# Identity & Inbox ({{AGENT_NAME}})
 
 ## 🕒 Current State
-- **Active Task**: None
-- **Last Action**: System Initialization (v6.1)
-- **Status**: Ready
+- **Role**: Agency Specialist
+- **Status**: Active
+- **Last Heartbeat**: $(date -u)
 
-## 🧠 Collective Memory (Key Learnings)
-- [2026-05-21] System upgraded to Professional Agency v6.1.
-- [2026-05-21] Introduced 'Soul Awakening' for automatic role scaffolding.
+## 🧠 Memory Milestones
+- [2026-05-21] Upgraded to Universal Agency Architecture (v6.3).
 
-## 📅 Diary Summary (Last 3 entries)
-- See `diary/` for detailed logs.
+## 📥 Mailbox (Pending Tasks)
+*See inbox.json for structured briefings.*
+
+## 📅 Action Logs
+*Check diary/ for daily execution details.*
