@@ -28,11 +28,11 @@ echo "$DISC_DATA" | jq -c "." | while read -r disc; do
   D_NUM=$(echo "$disc" | jq -r '.number')
   D_TITLE=$(echo "$disc" | jq -r '.title')
 
-  # 两层查重：
-  # 1. 实质性回复（[@agent/taizi]）— agent 的正式报告，永久有效
-  # 2. ACK 通知（@agent/taizi 收到）— 一次性确认，发送后不再重复
-  HAS_REAL_REPLY=$(echo "$disc" | jq -r "[.comments.nodes[] | select(.body | contains(\"[@agent/${AGENT_SLUG}]\"))] | length" 2>/dev/null)
-  HAS_ACK=$(echo "$disc" | jq -r "[.comments.nodes[] | select(.body | contains(\"[@${AGENT_SLUG}]\") or (.body | contains(\"@${AGENT_SLUG}\") and .body | contains(\"收到\"))))] | length" 2>/dev/null)
+  # 三层查重（保护 agent 免受脚本干扰）：
+  # 1. 实质性回复（[@agent/xxx] 格式）— agent 的正式分析，永久有效
+  # 2. agent/ 分析回复（[xxx]/analyzed 格式）— skill/all 场景下的分析报告
+  # 3. skill/all 广播回复（[xxx] [division/xxx]/xxx 格式）— agent 的实质性广播回复
+  HAS_REAL_REPLY=$(echo "$disc" | jq -r "[.comments.nodes[] | select(.body | contains(\"[@agent/${AGENT_SLUG}]\") or .body | contains(\"[${AGENT_SLUG}]/analyzed\") or (.body | contains(\"[${AGENT_SLUG}]\") and .body | contains(\"/\")))] | length" 2>/dev/null)
 
   # 检查是否被艾特（标题+正文，不查评论避免自己触发自己）
   # @agent/all → 所有agent都要回，@agent/taizi → 只有我回
@@ -46,20 +46,20 @@ echo "$DISC_DATA" | jq -c "." | while read -r disc; do
   SHOULD_RESPOND=$((IS_TAGGED + HAS_SKILL_ALL))
 
   echo "Discussion #$D_NUM: $D_TITLE"
-  echo "  → tagged=${IS_TAGGED}, skill/all=${HAS_SKILL_ALL}, real_reply=${HAS_REAL_REPLY}, ack=${HAS_ACK}"
+  echo "  → tagged=${IS_TAGGED}, skill/all=${HAS_SKILL_ALL}, real_reply=${HAS_REAL_REPLY}"
 
-  # 场景1：有实质性回复 → 跳过
+  # 核心原则：禁止脚本发送任何自动评论！
+  # - 不发"收到"等 ACK（违反"禁止纯 ACK"原则）
+  # - 不发模板占位符（agent AI 应生成真实内容）
+  # - 脚本只负责检测，真实回复由 agent AI 生成
+  #
+  # 场景1：有实质性回复 → 跳过（agent 已处理）
   if [ "$HAS_REAL_REPLY" -gt "0" ]; then
-    echo "  → 有实质性回复，跳过"
-  # 场景2：触发 + 没 ACK → 发 ACK
-  elif [ "$SHOULD_RESPOND" -gt "0" ] && [ "${HAS_ACK:-0}" -eq "0" ]; then
-    echo "  → 触发，无 ACK，发通知"
-    gh api graphql -f query='mutation($id:ID!,$body:String!){addDiscussionComment(input:{discussionId:$id,body:$body}){comment{id}}}' \
-      -f id="$D_ID" -f body="@${AGENT_SLUG} 收到艾特，我来分析一下，有结果后汇报。" >/dev/null
-  # 场景3：触发 + 有 ACK → 跳过
+    echo "  → 有实质性回复，跳过（agent AI 已处理）"
+  # 场景2：触发但没回复 → 记录日志，等待 agent AI 响应
   elif [ "$SHOULD_RESPOND" -gt "0" ]; then
-    echo "  → 触发，已有 ACK，跳过"
-  # 场景4：没触发 → 跳过
+    echo "  → 触发，等待 agent AI 响应（脚本不自动评论）"
+  # 场景3：没触发 → 跳过
   else
     echo "  → 没被艾特且无 skill/all，跳过"
   fi

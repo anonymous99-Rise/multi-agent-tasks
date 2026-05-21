@@ -54,16 +54,12 @@ echo "$ISSUE_DATA" | jq -c ".[]" | while read -r issue; do
     continue
   fi
 
-  # ========== 三层查重 ==========
+  # ========== 三层查重（保护 agent 免受脚本干扰）==========
   # 1. 实质性回复（[@agent/xxx] 格式）— agent 的正式分析，永久有效
-  # 2. ACK 通知（@agent/xxx 收到）— 一次性确认，发送后不再重复
-  # 3. QA PASS 标记 — 证明任务已通过质量验证
-
+  # 2. agent/ 分析回复（[xxx]/analyzed 格式）— skill/all 场景下的分析报告
+  # 3. skill/all 广播回复（[xxx] [division/xxx]/xxx 格式）— agent 的实质性广播回复
   HAS_REAL_REPLY=$(gh issue view $I_NUM --json comments --jq \
-    "[.comments[] | select(.author.login == \"agent/${AGENT_SLUG}\" and (.body | contains(\"[@${AGENT_SLUG}]\")))] | length" 2>/dev/null)
-
-  HAS_ACK=$(gh issue view $I_NUM --json comments --jq \
-    "[.comments[] | select(.author.login == \"agent/${AGENT_SLUG}\" and .body | contains(\"收到\") and (.body | not(contains(\"[@${AGENT_SLUG}]\"))))] | length" 2>/dev/null)
+    "[.comments[] | select(.author.login == \"agent/${AGENT_SLUG}\" and (.body | contains(\"[@${AGENT_SLUG}]\") or .body | contains(\"[${AGENT_SLUG}]/analyzed\") or (.body | contains(\"[${AGENT_SLUG}]\") and .body | contains(\"/\"))))] | length" 2>/dev/null)
 
   HAS_QA_PASS=$(echo "$I_LABELS" | grep -c "task/qa-pass" || true)
 
@@ -81,111 +77,46 @@ echo "$ISSUE_DATA" | jq -c ".[]" | while read -r issue; do
   echo "  → tagged=${IS_TAGGED}, skill/all=${HAS_SKILL_ALL}, qa_pass=${HAS_QA_PASS}, attempt=${ATTEMPT_COUNT}"
   echo "  → phase: pm=${HAS_PHASE_PM}, dev=${HAS_PHASE_DEV}, qa=${HAS_PHASE_QA}, integration=${HAS_PHASE_INTEGRATION}"
 
+  # ========== 核心原则：禁止脚本发送任何自动评论！==========
+  # - 不发"收到"等 ACK（违反"禁止纯 ACK"原则）
+  # - 不发模板占位符（agent AI 应生成真实内容）
+  # - 脚本只负责检测，真实回复由 agent AI 生成
+  #
+  # 决策逻辑：
+  # - 场景1：QA PASS → 跳过（任务已完成）
+  # - 场景2：有实质性回复 → 跳过（agent AI 已处理）
+  # - 场景3：触发但没回复 → 记录日志，等待 agent AI 响应（脚本不评论）
+  # - 场景4：重试超限 → 可发送 escalation，但需人工确认内容
+  # - 场景5：没触发 → 跳过
+
   # ========== 决策逻辑 ==========
 
   # 场景1：QA PASS → 跳过（任务已完成）
   if [ "$HAS_QA_PASS" -gt "0" ]; then
     echo "  → QA PASS，跳过"
 
-  # 场景2：有实质性回复 → 检查是否需要 QA 验证
+  # 场景2：有实质性回复 → 跳过（agent AI 已处理）
   elif [ "$HAS_REAL_REPLY" -gt "0" ]; then
-    echo "  → 有实质性回复，检查 QA 状态"
+    echo "  → 有实质性回复，跳过（agent AI 已处理）"
+    # 注意：skill/all 场景下，如果已有回复，说明其他 agent 已处理
+    # 脚本不重复评论
 
-    # 如果有 skill/all 且 agent 是 collector，应该进行审计
-    if [ "$HAS_SKILL_ALL" -gt 0 ] && [ "$IS_COMMANDER" -eq 0 ]; then
-      if [ "$HAS_PHASE_QA" -eq "0" ]; then
-        gh issue edit $I_NUM --add-label "phase/qa" 2>/dev/null
-        gh issue comment $I_NUM --body "[${AGENT_SLUG}]/analyzed
-
-[@${AGENT_SLUG}] 已分析，等待质量验证。
-
-**Skill/All 分析报告：**
-\`\`\`
-## [ANALYSIS]
-**Agent:** @${AGENT_SLUG}
-**Type:** skill/all 响应
-**Phase:** QA
-
-### 分析内容
-[根据角色提供分析]
-- Trait: ${MY_ROLE_LABEL}
-- 分析要点: [角色相关的内容]
-
-### Evidence
-[证据：链接、截图、代码片段]
-
-### Next
-[下一步建议]
-\`\`\`
-" 2>/dev/null
-      fi
-    fi
-
-  # 场景3：触发 + 没回复 → 发送分析（不是认领！）
+  # 场景3：触发 + 没回复 → 记录日志，等待 agent AI 响应
   elif [ "$SHOULD_PROCESS" -gt "0" ] && [ "$HAS_REAL_REPLY" -eq "0" ]; then
-    echo "  → 触发，发送分析（不认领）"
-
-    # 构建 skill/all 或 @ 触发的前缀
-    if [ "$HAS_SKILL_ALL" -gt 0 ]; then
-      COMMENT_PREFIX="[${AGENT_SLUG}]/analyzed"
-      SKILL_CONTEXT="**类型:** skill/all 全员分析"
-    else
-      COMMENT_PREFIX="[@${AGENT_SLUG}]"
-      SKILL_CONTEXT="**类型:** @ 触发响应"
-    fi
-
-    gh issue comment $I_NUM --body "${COMMENT_PREFIX}
-
-${SKILL_CONTEXT}
-**Agent:** @${AGENT_SLUG}
-**Trait:** ${MY_ROLE_LABEL}
-
-**状态报告：**
-\`\`\`
-## [STATUS REPORT]
-**Phase:** PM → Dev → QA → Integration
-**Task:** ${I_TITLE}
-**Progress:** 0%
-**Status:** IN_PROGRESS
-**Attempts:** ${ATTEMPT_COUNT}/${MAX_RETRIES}
-
-### 当前阶段
-[具体在做什么]
-
-### Evidence
-[证据：链接、截图、代码片段]
-
-### Next
-[下一步]
-\`\`\`
-
-> ⚠️ **注意**: 不要自动认领任务！只有在被明确 @ 时才响应。
-" 2>/dev/null
+    echo "  → 触发 skill/all 或 @mention，等待 agent AI 响应（脚本不自动评论）"
+    # 脚本只记录日志，不发送任何评论
+    # agent AI 检测到 skill/all 或被 @ 时，应该发送真实分析
 
   # 场景4：触发 + 有回复 + 检查重试
   elif [ "$SHOULD_PROCESS" -gt "0" ] && [ "$HAS_REAL_REPLY" -gt "0" ]; then
     echo "  → 已有回复，检查 retry 状态"
 
-    # 如果 attempts 超过上限，发送 escalation 报告
+    # 如果 attempts 超过上限，标记 escalation（但不自动发评论）
     if [ "$ATTEMPT_COUNT" -ge "$MAX_RETRIES" ]; then
-      echo "  → 达到重试上限，发送 escalation"
+      echo "  → 达到重试上限，标记 escalated"
       gh issue edit $I_NUM --add-label "task/escalated" --remove-label "task/processing" 2>/dev/null
-      gh issue comment $I_NUM --body "[${AGENT_SLUG}]/escalation
-
-::escalation::
-[@${AGENT_SLUG}] 任务已达到最大重试次数（${MAX_RETRIES}），需要人工介入。
-
-**Escalation 报告：**
-\`\`\`
-## [ESCALATION]
-**Issue:** #${I_NUM}
-**Agent:** @${AGENT_SLUG}
-**Attempts:** ${ATTEMPT_COUNT}/${MAX_RETRIES}
-**Problem:** [描述问题]
-**Last Attempt:** [上次尝试的结果]
-**Required:** [需要什么帮助]
-\`\`\`
-" 2>/dev/null
+      # 注意：escalation 评论需要人工填写内容，脚本不能生成
+      echo "  → 需要人工介入填写 escalation 内容"
     else
       echo "  → 重试次数未超限，跳过"
     fi
