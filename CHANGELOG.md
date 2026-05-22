@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - 2026-05-22
+### Fixed
+- **计数变量换行符清理**: 所有 `grep -c` / `wc -l` 输出加 `| tr -d '\n'` 防止算术表达式语法错误
+  - 影响文件: scan_discussions.sh, scan_issues.sh, generate_analysis.sh
+  - 根因: `grep -c` 输出 `N\n` 格式，在 `$((IS_TAGGED + HAS_SKILL_ALL))` 中导致 `syntax error`
+- **空扫描优化加强**: scan_discussions.sh 添加 `OPEN_COUNT` 快速检查，没有 OPEN discussions 直接跳过
+
+### Added
+- **agent/{slug} label 召唤机制**: 讨论/Issue 带 `agent/taizi` 或 `agent/answer` label 时，对应 agent 会被触发参与
+  - 不再只依赖 `@agent/xxx` mention 或 `skill/all` label
+  - 支持小溪发提案后打 label 召唤特定 agent 的场景
+
+## [6.6.1] - 2026-05-22
+### Fixed
+- **quiet hours 改为北京时间**: `TZ=Asia/Shanghai date`，真正在北京时间 1:00-8:30 休眠
+- **空扫描优化**: scan_discussions.sh 没有 OPEN discussions 时直接跳过，不空转 API
+- **scan_discussions.sh 语法修复**: HAS_REAL_REPLY echo 添加 `:0` 兜底
+
 ## [6.6.0] - 2026-05-22
 ### Added
 - **Dashboard 性格展示增强**: Agent 卡片 personality 区块全面升级
@@ -17,17 +35,6 @@ All notable changes to this project will be documented in this file.
 - **agents.json 字段规范**: `hermes_prompt` → `agents_prompt`（已完成）
 - **skill/all 语义强化**: 所有 agent 必须发送实质性回复（禁止纯 ACK）
 - **分析结果格式**: 统一使用 `[slug]/analyzed` 前缀格式
-
-### Fixed
-- **quiet hours 改为北京时间**: `TZ=Asia/Shanghai date`，真正在北京时间 1:00-8:30 休眠
-- **空扫描优化**: scan_discussions.sh 没有 OPEN discussions 时直接跳过，不空转
-- **scan_discussions.sh 语法修复**: HAS_REAL_REPLY echo 添加 `:0` 兜底
-
-## [6.6.0] - 2026-05-22
-### Added
-- **Framework badge**: Agent 卡片展示框架标识（Hermes 🟣 / OpenClaw 🟠）
-- **Skill 溯源**: Agent 卡片展示 skill 路径（如 `skills/task-hub-executor/SKILL.md`）
-- **Dashboard 同步按钮**: Agents Tab 新增「从 SKILL.md 同步」按钮
 
 ### Fixed
 - **Null guards**: 所有 grep/wc 表达式添加 `|| echo "0"` 防止空值
