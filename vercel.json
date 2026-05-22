@@ -1,0 +1,12 @@
+{
+  "projects": [
+    {
+      "path": "dashboard",
+      "settings": {
+        "buildCommand": "npm run build",
+        "installCommand": "npm install",
+        "outputDirectory": ".next"
+      }
+    }
+  ]
+}
