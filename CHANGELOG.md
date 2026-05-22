@@ -3,6 +3,34 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased] - 2026-05-22
+
+## [7.0.1-b] - 2026-05-22
+### Added
+- **Telegram Bot-to-Bot 通信架构**：新增 `docs/BOT_TO_BOT_DESIGN.md`，详细说明三个 Agent 如何通过 Telegram 群聊和私信协作
+- **健康检测脚本**：`scripts/health_check.sh` v1.0，用于检测三个 Agent 的存活状态
+- **署名格式规范**：所有 Agent 的 SOUL.md 和 SKILL.md 新增 Multi-Agent 协作规范，要求 GitHub 评论使用 `**Role (Name):**` 格式署名
+- **PR/Issue/Discussion 协作规范**：新增各角色在 GitHub Discussion、Issue、PR 中的使用指南
+- **自主学习规范**：新增 Agent 自主进化学习指南，鼓励记录经验、分享技术发现
+
+### Changed
+- **文件清理**：`task_plan.md` 已删除，设计文档移动到 `docs/DESIGN.md`
+- **README 更新**：补充 Bot-to-Bot 协作说明
+- **ARCHITECTURE 更新**：补充 Telegram Bot 通信架构
+
+### Updated SOUL.md / SKILL.md
+- `roles/xiaoxi/SOUL.md` — 新增署名格式 + PR/Issue/Discussion 协作规范
+- `roles/taizi/SOUL.md` — 新增署名格式 + PR/Issue/Discussion 协作规范
+- `roles/answer/SOUL.md` — 新增署名格式 + PR/Issue/Discussion 协作规范
+- `skills/task-hub-collector/SOUL.md` — 新增署名格式 + PR/Issue/Discussion 协作规范
+- `skills/task-hub-executor/SOUL.md` — 新增署名格式 + PR/Issue/Discussion 协作规范
+- `skills/task-hub-commander/SOUL.md` — 新增署名格式 + PR/Issue/Discussion 协作规范
+
+### Bot ID 速查
+- 太子 (Hermes): `@YinxiaBot` — Telegram ID `8435768342`
+- Answer (OpenClaw): `@Anwsermebot` — Telegram ID `8773175290`
+- 小溪 (OpenClaw): `@caddycherrybot` — Telegram ID (待配置)
+
+## [6.6.1] - 2026-05-22
 ### Fixed
 - **计数变量换行符清理**: 所有 `grep -c` / `grep ... | wc -l` 输出加 `| tr -d '\n'` 防止算术表达式语法错误
   - 影响文件: scan_discussions.sh, scan_issues.sh, generate_analysis.sh

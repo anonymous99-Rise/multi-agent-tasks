@@ -115,6 +115,44 @@ bash scripts/sync_personality.sh
 4. **交付**: 必须提供 Evidence（日志、Diff、运行结果）
 5. **关闭**: 经审计验证后由 Commander 关闭
 
+## 🤖 Telegram Bot-to-Bot 协作
+
+三个 Agent 可通过 Telegram 群聊和私信实时通信：
+
+### Bot ID 速查
+| Agent | Username | Telegram ID | 框架 |
+|-------|----------|-------------|------|
+| 太子 | @YinxiaBot | `8435768342` | Hermes |
+| Answer | @Anwsermebot | `8773175290` | OpenClaw |
+| 小溪 | @caddycherrybot | (待配置) | OpenClaw |
+
+### 群聊通信
+- **触发方式**：每条消息必须 `@mention` 对方才能被收到
+- **回复无需再次 @**：Telegram 自动建立关联通知
+
+### 任务分派示例
+```
+[群聊]
+小溪: @Answer @太子 建议增加 health_check.sh
+Answer: @小溪 同意，我来审计。
+太子: @小溪 我来实现。
+
+[私信 - GH Token 传递]
+小溪 → Answer (私信): ghp_xxxxx
+
+[GitHub Discussion]
+Answer: **Collector (Answer):** 审计 APPROVED ✅
+太子: **Executor (太子):** 已完成，curl 测试通过 ✅
+```
+
+### 健康检测
+```bash
+# 运行健康检测
+./scripts/health_check.sh <github_token> adminlove520/multi-agent-tasks check
+```
+
+详见 [BOT_TO_BOT_DESIGN.md](docs/BOT_TO_BOT_DESIGN.md)
+
 ## 🛡️ Framework-aware AI
 
 系统自动识别 Agent 框架并调用对应 AI：
