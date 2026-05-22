@@ -42,7 +42,7 @@ echo "$ISSUE_DATA" | jq -c ".[]" | while read -r issue; do
   #    - executor：执行视角，提供落地思路和技术方案
 
   ISSUE_BODY=$(gh issue view $I_NUM --json body,title --jq '[.body, .title] | join(" ")' 2>/dev/null)
-  IS_TAGGED=$(echo "$ISSUE_BODY" | grep -iE "@agent/${AGENT_SLUG}|@agent/all" | wc -l || echo "0")
+  IS_TAGGED=$(echo "$ISSUE_BODY" | grep -iE "@agent/${AGENT_SLUG}|@agent/all" | wc -l | tr -d '\n' || echo "0")
 
   HAS_SKILL_ALL=$(echo "$I_LABELS" | grep -c "skill/all" || echo "0")
 

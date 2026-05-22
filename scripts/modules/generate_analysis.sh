@@ -82,8 +82,8 @@ if [ -f "$COMMENT_FILE" ] && [ -s "$COMMENT_FILE" ]; then
   CONTENT=$(cat "$COMMENT_FILE")
   
   # 过滤掉纯 ACK 和无效内容
-  IS_ACK=$(echo "$CONTENT" | grep -iE "(收到艾特|我来分析一下|稍后汇报|ACK)" | wc -l)
-  IS_PLACEHOLDER=$(echo "$CONTENT" | grep -iE "(\[具体在做什么\]|\[证据：|具体时间|待确认)" | wc -l)
+  IS_ACK=$(echo "$CONTENT" | grep -iE "(收到艾特|我来分析一下|稍后汇报|ACK)" | wc -l | tr -d '\n' || echo "0")
+  IS_PLACEHOLDER=$(echo "$CONTENT" | grep -iE "(\[具体在做什么\]|\[证据：|具体时间|待确认)" | wc -l | tr -d '\n' || echo "0")
   
   if [ "$IS_ACK" -gt 0 ] || [ "$IS_PLACEHOLDER" -gt 0 ]; then
     echo "[generate_analysis] 生成内容为无效 ACK/占位符，跳过评论。"

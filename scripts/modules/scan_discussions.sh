@@ -25,7 +25,7 @@ if [ -z "$DISC_DATA" ]; then
 fi
 
 # Quick check: skip if no OPEN discussions (reduce API calls)
-OPEN_COUNT=$(echo "$DISC_DATA" | grep -c '"isAnswered":false' || echo "0")
+OPEN_COUNT=$(echo "$DISC_DATA" | grep -c '"isAnswered":false' | tr -d '\n' || echo "0")
 if [ "$OPEN_COUNT" -eq 0 ]; then
   echo "No open discussions (all closed/answered). Skip scan."
   exit 0
@@ -48,7 +48,7 @@ echo "$DISC_DATA" | jq -c "." | while read -r disc; do
 
   # 检查是否被艾特（标题+正文，不查评论避免自己触发自己）
   # @agent/all → 所有agent都要回，@agent/taizi → 只有我回
-  IS_TAGGED=$(echo "$disc" | jq -r ".title, .body" | grep -iE "@agent/all|@agent/${AGENT_SLUG}" | wc -l || echo "0")
+  IS_TAGGED=$(echo "$disc" | jq -r ".title, .body" | grep -iE "@agent/all|@agent/${AGENT_SLUG}" | wc -l | tr -d '\n' || echo "0")
 
   # skill/all label 也视为被艾特（全员广播）
   D_LABELS=$(echo "$disc" | jq -r ".labels.nodes[].name" 2>/dev/null)
@@ -124,8 +124,8 @@ URL: $DISC_URL
       ANALYSIS=$(hermes chat -q "$AGENT_PROMPT" --provider minimax-cn 2>&1)
 
       # 过滤无效内容
-      IS_ACK=$(echo "$ANALYSIS" | grep -iE "(收到艾特|我来分析一下|稍后汇报)" | wc -l)
-      IS_PLACEHOLDER=$(echo "$ANALYSIS" | grep -iE "(\[具体在做什么\]|\[证据：)" | wc -l)
+      IS_ACK=$(echo "$ANALYSIS" | grep -iE "(收到艾特|我来分析一下|稍后汇报)" | wc -l | tr -d '\n' || echo "0")
+      IS_PLACEHOLDER=$(echo "$ANALYSIS" | grep -iE "(\[具体在做什么\]|\[证据：)" | wc -l | tr -d '\n' || echo "0")
 
       if [ "$IS_ACK" -gt 0 ] || [ "$IS_PLACEHOLDER" -gt 0 ]; then
         echo "  → Hermes 生成内容为无效 ACK/占位符，跳过评论"

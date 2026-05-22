@@ -4,9 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased] - 2026-05-22
 ### Fixed
-- **计数变量换行符清理**: 所有 `grep -c` / `wc -l` 输出加 `| tr -d '\n'` 防止算术表达式语法错误
+- **计数变量换行符清理**: 所有 `grep -c` / `grep ... | wc -l` 输出加 `| tr -d '\n'` 防止算术表达式语法错误
   - 影响文件: scan_discussions.sh, scan_issues.sh, generate_analysis.sh
-  - 根因: `grep -c` 输出 `N\n` 格式，在 `$((IS_TAGGED + HAS_SKILL_ALL))` 中导致 `syntax error`
+  - 根因: `grep -c` 和 `wc -l` 输出 `N\n` 格式，在 `$((IS_TAGGED + HAS_SKILL_ALL))` 中导致 `syntax error`
+  - PR #87 修复了 `grep -c`，PR #88 补充了 `wc -l`
 - **空扫描优化加强**: scan_discussions.sh 添加 `OPEN_COUNT` 快速检查，没有 OPEN discussions 直接跳过
 
 ### Added
@@ -19,6 +20,7 @@ All notable changes to this project will be documented in this file.
 - **quiet hours 改为北京时间**: `TZ=Asia/Shanghai date`，真正在北京时间 1:00-8:30 休眠
 - **空扫描优化**: scan_discussions.sh 没有 OPEN discussions 时直接跳过，不空转 API
 - **scan_discussions.sh 语法修复**: HAS_REAL_REPLY echo 添加 `:0` 兜底
+>>>>>>> origin/main
 
 ## [6.6.0] - 2026-05-22
 ### Added
