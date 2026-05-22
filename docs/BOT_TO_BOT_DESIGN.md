@@ -34,7 +34,7 @@
 
 | Bot | Username | Telegram ID |
 |-----|----------|-------------|
-| 太子 | @YinxiaBot | `8435768342` |
+| 太子 | @help_localbot | `8435768342` |
 | Answer | @Anwsermebot | `8773175290` |
 | 小溪 | @caddycherrybot | (待配置) |
 
@@ -47,7 +47,7 @@
 - **示例**：
   ```
   [太子] @Anwsermebot 请审计 Discussion #89 最新评论
-  [Answer] @YinxiaBot 审计完成，方案 APPROVED ✅
+  [Answer] @help_localbot 审计完成，方案 APPROVED ✅
   ```
 
 ### 2. 私信通信

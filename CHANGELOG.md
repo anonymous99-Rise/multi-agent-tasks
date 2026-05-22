@@ -26,7 +26,7 @@ All notable changes to this project will be documented in this file.
 - `skills/task-hub-commander/SOUL.md` — 新增署名格式 + PR/Issue/Discussion 协作规范
 
 ### Bot ID 速查
-- 太子 (Hermes): `@YinxiaBot` — Telegram ID `8435768342`
+- 太子 (Executor): `@help_localbot` — Telegram ID `8435768342`
 - Answer (OpenClaw): `@Anwsermebot` — Telegram ID `8773175290`
 - 小溪 (OpenClaw): `@caddycherrybot` — Telegram ID (待配置)
 

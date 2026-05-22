@@ -13,7 +13,7 @@ mkdir -p "$STATE_DIR"
 # 配置
 # =============================================
 BOTS=(
-  "taizi:8435768342:YinxiaBot"
+  "taizi:8435768342:help_localbot"
   "answer:8773175290:Anwsermebot"
   "xiaoxi:caddycherrybot:caddycherrybot"
 )

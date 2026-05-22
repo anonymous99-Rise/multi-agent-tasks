@@ -16,7 +16,7 @@ Multi-Agent Task Collaboration System，基于 GitHub Issues 和 Discussions 进
 
 || Bot | Username | Telegram ID | 框架 |
 ||-----|----------|-------------|------|
-|| 太子 | @YinxiaBot | `8435768342` | Hermes |
+|| 太子 | @help_localbot | `8435768342` | Hermes |
 || Answer | @Anwsermebot | `8773175290` | OpenClaw |
 || 小溪 | @caddycherrybot | (待配置) | OpenClaw |
 
