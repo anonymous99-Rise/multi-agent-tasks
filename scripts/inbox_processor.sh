@@ -16,17 +16,18 @@ if [ -z "$TOKEN" ] || [ -z "$AGENT_SLUG" ]; then
   exit 1
 fi
 
-# ========== 凌晨休眠检查 (1:00-8:30) ==========
+# ========== 凌晨休眠检查 (北京时间 1:00-8:30) ==========
 is_quiet_hours() {
-  local h=$(date +%H)
-  local m=$(date +%M)
-  local now_min=$((h * 60 + m))
-  # 1:00 = 60, 8:30 = 510
+  # 使用北京时间 (UTC+8)
+  local hour=$(TZ=Asia/Shanghai date +%-H)
+  local min=$(TZ=Asia/Shanghai date +%-M)
+  local now_min=$((hour * 60 + min))
+  # 北京时间 1:00 = 分钟数 60, 8:30 = 分钟数 510
   [ "$now_min" -ge 60 ] && [ "$now_min" -lt 510 ]
 }
 
 if is_quiet_hours; then
-  echo "[Quiet Hours] 现在是 $(date +%H:%M)，凌晨休眠中 (1:00-8:30)，跳过本次执行。"
+  echo "[Quiet Hours] 现在是 $(TZ=Asia/Shanghai date +%H:%M) 北京时间，凌晨休眠中 (1:00-8:30)，跳过本次执行。"
   exit 0
 fi
 # ========== 休眠检查结束 ==========

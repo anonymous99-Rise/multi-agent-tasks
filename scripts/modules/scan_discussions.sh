@@ -24,6 +24,17 @@ if [ -z "$DISC_DATA" ]; then
   exit 0
 fi
 
+# Quick check: skip if no OPEN discussions (reduce API calls)
+OPEN_COUNT=$(echo "$DISC_DATA" | grep -c '"isAnswered":false' || echo "0")
+if [ "$OPEN_COUNT" -eq 0 ]; then
+  echo "No open discussions (all closed/answered). Skip scan."
+  exit 0
+fi
+echo "Found $OPEN_COUNT open discussions."
+
+# Note: isAnswered filter requires checking each discussion body
+# For now we check via labels/state if available
+
 echo "$DISC_DATA" | jq -c "." | while read -r disc; do
   D_ID=$(echo "$disc" | jq -r '.id')
   D_NUM=$(echo "$disc" | jq -r '.number')
@@ -47,7 +58,7 @@ echo "$DISC_DATA" | jq -c "." | while read -r disc; do
   SHOULD_RESPOND=$((IS_TAGGED + HAS_SKILL_ALL))
 
   echo "Discussion #$D_NUM: $D_TITLE"
-  echo "  → tagged=${IS_TAGGED}, skill/all=${HAS_SKILL_ALL}, real_reply=${HAS_REAL_REPLY}"
+  echo "  → tagged=${IS_TAGGED}, skill/all=${HAS_SKILL_ALL}, real_reply=${HAS_REAL_REPLY:-0}"
 
   # 核心原则：禁止脚本发送任何自动评论！
   # - 不发"收到"等 ACK（违反"禁止纯 ACK"原则）
