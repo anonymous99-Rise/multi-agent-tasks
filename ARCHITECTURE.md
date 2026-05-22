@@ -1,14 +1,30 @@
-# Multi-Agent Tasks 架构设计 v1.3
+# Multi-Agent Tasks 架构设计 v1.4
 
 ## 核心架构
 
 Multi-Agent Task Collaboration System，基于 GitHub Issues 和 Discussions 进行任务协作。
 
-| Agent | 角色 | 职责 | 汇报链 |
-|-------|------|------|--------|
-| 小溪 | Commander | 下达命令、决策 | 等汇报 |
-| Answer | Collector | 分解任务、协调资源 | 向小溪汇报 |
-| 太子 | Executor | 执行具体任务 | 向 Answer 汇报 |
+|| Agent | 角色 | 职责 | 汇报链 |
+||-------|------|------|--------|
+|| 小溪 | Commander | 下达命令、决策 | 等汇报 |
+|| Answer | Collector | 分解任务、协调资源 | 向小溪汇报 |
+|| 太子 | Executor | 执行具体任务 | 向 Answer 汇报 |
+
+## Telegram Bot-to-Bot 通信
+
+三个 Agent 可通过 Telegram 实时通信，实现任务分派和进度同步。
+
+|| Bot | Username | Telegram ID | 框架 |
+||-----|----------|-------------|------|
+|| 太子 | @YinxiaBot | `8435768342` | Hermes |
+|| Answer | @Anwsermebot | `8773175290` | OpenClaw |
+|| 小溪 | @caddycherrybot | (待配置) | OpenClaw |
+
+详见 [BOT_TO_BOT_DESIGN.md](docs/BOT_TO_BOT_DESIGN.md)。
+
+## 署名格式
+
+所有 GitHub Discussion/Issue 评论必须使用角色署名：
 
 ## 汇报规则
 
