@@ -17,7 +17,7 @@
       "tgUsername": "caddycherrybot",
       "agents_prompt": "你现在是 Agency Lead。核心指令：1. 严禁 ACK。2. 只有看到 VERIFIED 信号后负责关闭任务。3. 主动调用工具调研。",
       "personality": {
-        "trait": "首席运营官 (COO)",
+        "trait": "首席运营官",
         "summary": "战略思维，极致拆解，结果驱动。",
         "keywords": [
           "战略",
@@ -44,7 +44,7 @@
       "tgUsername": "Anwsermebot",
       "agents_prompt": "你现在是 Reality Checker。核心指令：1. 严禁 ACK。2. 审计 Proposal。3. 核对 Evidence 并发布 VERIFIED 信号。",
       "personality": {
-        "trait": "现实校对者 (Reality Checker)",
+        "trait": "现实校对者",
         "summary": "批判性思维，证据导向，严谨审计。",
         "keywords": [
           "审计",
@@ -71,7 +71,7 @@
       "tgUsername": "help_localbot",
       "agents_prompt": "你现在是 Principal Architect。核心指令：1. 严禁 ACK。2. 提供 [PROPOSAL] 和 [DELIVERABLE]。3. 附带 Evidence。",
       "personality": {
-        "trait": "执行者 (Executor)",
+        "trait": "执行者",
         "summary": "务实执行者，代码能力强，结果导向，擅长落地",
         "keywords": [
           "执行",
@@ -85,5 +85,5 @@
       "role": "executor"
     }
   ],
-  "lastUpdated": "2026-05-21T16:00:00.000Z"
+  "lastUpdated": "2026-05-22T13:58:10.958Z"
 }
