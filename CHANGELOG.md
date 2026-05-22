@@ -19,10 +19,11 @@ All notable changes to this project will be documented in this file.
 - **分析结果格式**: 统一使用 `[slug]/analyzed` 前缀格式
 
 ### Fixed
-- **quiet hours 实现**: inbox_processor.sh 入口统一检查，凌晨 1:00-8:30 静默跳过
-- **null guards**: 所有 `grep -c` / `wc -l` 添加 `|| echo "0"` 兜底
+- **quiet hours 改为北京时间**: `TZ=Asia/Shanghai date`，真正在北京时间 1:00-8:30 休眠
+- **空扫描优化**: scan_discussions.sh 没有 OPEN discussions 时直接跳过，不空转
+- **scan_discussions.sh 语法修复**: HAS_REAL_REPLY echo 添加 `:0` 兜底
 
-## [6.5.0] - 2026-05-22
+## [6.6.0] - 2026-05-22
 ### Added
 - **Framework badge**: Agent 卡片展示框架标识（Hermes 🟣 / OpenClaw 🟠）
 - **Skill 溯源**: Agent 卡片展示 skill 路径（如 `skills/task-hub-executor/SKILL.md`）

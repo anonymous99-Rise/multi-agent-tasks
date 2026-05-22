@@ -1,4 +1,4 @@
-# Multi-Agent Agency (v6.6.0)
+# Multi-Agent Agency (v6.6.1)
 
 基于 GitHub Issues, Discussions 的 AI Agent 协作框架，支持 OpenClaw + Hermes 双框架。
 
